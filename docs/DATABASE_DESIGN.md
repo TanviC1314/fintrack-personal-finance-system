@@ -44,13 +44,13 @@ erDiagram
     TRANSACTIONS {
         uuid id PK
         uuid account_id FK
-        uuid category_id FK "nullable"
+        uuid category_id FK "nullable, see note below"
         uuid transfer_id FK "nullable"
         varchar type "INCOME, EXPENSE, TRANSFER_IN, TRANSFER_OUT"
         numeric amount "19,2 always > 0"
         varchar description
         date transaction_date
-        timestamptz deleted_at "nullable, reversal marker"
+        timestamptz reversed_at "nullable, reversal marker"
         timestamptz created_at
         timestamptz updated_at
     }
@@ -89,11 +89,17 @@ erDiagram
 | Table | Phase | Status |
 | --- | --- | --- |
 | `users` | 2 | built |
-| `accounts` | 3 | being built |
-| `transactions` | 4 | planned |
+| `accounts` | 3 | built |
+| `transactions` | 4 | being built |
 | `transfers` | 5 | planned |
 | `categories`, `budgets` | 6 | planned |
 | `audit_log` | alongside the operations it records | planned |
+
+**Note on transaction categories.** Until the `categories` table exists (Phase 6),
+`transactions.category` is a plain text label of up to 50 characters. When categories are
+added, a migration will create a category row per distinct label for each user and replace the
+text column with the `category_id` foreign key shown above. The transfer link
+(`transfer_id`) is likewise added by the Phase 5 migration.
 
 ## Relationships in plain language
 
@@ -147,7 +153,7 @@ account row gives a single row to lock for that.
 - **Database as the last line of defence.** `CHECK (current_balance >= 0)` rejects an
   overdraft even if application code has a bug.
 - **Corrections are reversals, not edits.** Deleting a transaction marks it reversed
-  (`deleted_at`) and applies the opposite balance change in the same database transaction, so
+  (`reversed_at`) and applies the opposite balance change in the same database transaction, so
   history is kept. Individual transfer legs cannot be deleted.
 
 ## Other decisions

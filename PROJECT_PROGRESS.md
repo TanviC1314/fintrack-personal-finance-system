@@ -25,7 +25,7 @@ at the end of each phase.
 - [x] Account validation and error handling tests
 
 ## Phase 4 – Transactions
-- [ ] Transaction entity and migration
+- [x] Transaction entity and migration
 - [ ] Income and expense services
 - [ ] Transaction REST endpoints
 - [ ] Filtering and pagination
