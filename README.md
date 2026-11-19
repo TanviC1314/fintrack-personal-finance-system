@@ -46,7 +46,8 @@ Controllers only handle HTTP and DTO mapping, services own business rules and
 transactions, repositories own persistence. JPA entities are never exposed through the API.
 Money is always `BigDecimal` backed by `NUMERIC` columns.
 
-Detailed architecture and ER diagrams will be added with the database design.
+The database design, ER diagram and the account-balance consistency decision are in
+[docs/DATABASE_DESIGN.md](docs/DATABASE_DESIGN.md). An architecture diagram will be added later.
 
 ## Getting started
 
