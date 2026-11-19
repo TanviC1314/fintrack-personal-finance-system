@@ -5,11 +5,13 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 /** Ownership of a transaction is the ownership of its account, so every lookup also takes the user id. */
-public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
+public interface TransactionRepository
+        extends JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
 
     Optional<Transaction> findByIdAndAccountUserId(UUID id, UUID userId);
 
