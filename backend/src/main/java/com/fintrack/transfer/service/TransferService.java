@@ -11,6 +11,7 @@ import com.fintrack.transaction.entity.TransactionType;
 import com.fintrack.transaction.repository.TransactionRepository;
 import com.fintrack.transfer.dto.CreateTransferRequest;
 import com.fintrack.transfer.entity.Transfer;
+import com.fintrack.transfer.exception.IdempotencyKeyReusedException;
 import com.fintrack.transfer.repository.TransferRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -18,8 +19,11 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +35,10 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class TransferService {
+
+    private static final int MAX_KEY_LENGTH = 100;
+    private static final Pattern PRINTABLE_ASCII = Pattern.compile("[\\x21-\\x7E]+");
+    private static final String IDEMPOTENCY_CONSTRAINT = "uq_transfers_user_idempotency_key";
 
     private final TransferRepository transferRepository;
     private final TransactionRepository transactionRepository;
@@ -45,33 +53,87 @@ public class TransferService {
         this.clock = clock;
     }
 
+    /**
+     * Performs the transfer, or, if a transfer with the same idempotency key already exists for this
+     * user, returns that one without moving any money. A client that times out can therefore retry
+     * safely with the same key.
+     *
+     * <p>The key is checked twice. The first check is a cheap fast path. The second runs after the
+     * account locks are held: two identical concurrent requests lock the same accounts, so the second
+     * one waits until the first commits and then sees its transfer. The unique constraint on
+     * (user_id, idempotency_key) is the final guard.
+     */
     @Transactional
-    public Transfer transfer(UUID userId, CreateTransferRequest request, String idempotencyKey) {
+    public TransferResult transfer(UUID userId, CreateTransferRequest request, String idempotencyKey) {
+        requireValidKey(idempotencyKey);
         UUID sourceId = request.sourceAccountId();
         UUID destinationId = request.destinationAccountId();
+        BigDecimal amount = request.amount().setScale(2, RoundingMode.UNNECESSARY);
+
+        Optional<Transfer> earlier = transferRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey);
+        if (earlier.isPresent()) {
+            return replay(earlier.get(), sourceId, destinationId, amount);
+        }
+
         if (sourceId.equals(destinationId)) {
             throw new InvalidRequestException("Source and destination accounts must be different");
         }
         LocalDate date = request.transferDate() == null ? LocalDate.now(clock) : request.transferDate();
         DateRules.requireNotInFuture(date, clock);
-        BigDecimal amount = request.amount().setScale(2, RoundingMode.UNNECESSARY);
 
         Map<UUID, Account> locked = lockInFixedOrder(userId, sourceId, destinationId);
         Account source = locked.get(sourceId);
         Account destination = locked.get(destinationId);
+
+        earlier = transferRepository.findByUserIdAndIdempotencyKey(userId, idempotencyKey);
+        if (earlier.isPresent()) {
+            return replay(earlier.get(), sourceId, destinationId, amount);
+        }
         requireTransferable(source, destination);
 
         source.debit(amount);
         destination.credit(amount);
 
         String description = blankToNull(request.description());
-        Transfer transfer = transferRepository.saveAndFlush(new Transfer(
-                userId, sourceId, destinationId, amount, description, date, idempotencyKey));
+        Transfer transfer = saveTransfer(
+                new Transfer(userId, sourceId, destinationId, amount, description, date, idempotencyKey));
         transactionRepository.save(Transaction.transferLeg(source, TransactionType.TRANSFER_OUT, amount,
                 legDescription(description, "Transfer to " + destination.getName()), date, transfer.getId()));
         transactionRepository.save(Transaction.transferLeg(destination, TransactionType.TRANSFER_IN, amount,
                 legDescription(description, "Transfer from " + source.getName()), date, transfer.getId()));
-        return transfer;
+        return new TransferResult(transfer, false);
+    }
+
+    /** The same key with the same accounts and amount is a retry; anything else is a client mistake. */
+    private static TransferResult replay(Transfer earlier, UUID sourceId, UUID destinationId, BigDecimal amount) {
+        boolean sameRequest = earlier.getSourceAccountId().equals(sourceId)
+                && earlier.getDestinationAccountId().equals(destinationId)
+                && earlier.getAmount().compareTo(amount) == 0;
+        if (!sameRequest) {
+            throw new IdempotencyKeyReusedException();
+        }
+        return new TransferResult(earlier, true);
+    }
+
+    private Transfer saveTransfer(Transfer transfer) {
+        try {
+            return transferRepository.saveAndFlush(transfer);
+        } catch (DataIntegrityViolationException e) {
+            // A request with the same key but different accounts ran at the same moment and won.
+            // Only the idempotency constraint means that; any other violation is a real bug.
+            Throwable cause = e.getMostSpecificCause();
+            if (cause.getMessage() != null && cause.getMessage().contains(IDEMPOTENCY_CONSTRAINT)) {
+                throw new IdempotencyKeyReusedException();
+            }
+            throw e;
+        }
+    }
+
+    private static void requireValidKey(String key) {
+        if (key == null || key.isEmpty() || key.length() > MAX_KEY_LENGTH || !PRINTABLE_ASCII.matcher(key).matches()) {
+            throw new InvalidRequestException(
+                    "Idempotency-Key must be 1 to 100 printable characters without spaces");
+        }
     }
 
     /**

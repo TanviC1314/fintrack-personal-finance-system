@@ -3,6 +3,7 @@ package com.fintrack.transfer.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -21,6 +22,7 @@ import com.fintrack.transaction.entity.TransactionType;
 import com.fintrack.transaction.repository.TransactionRepository;
 import com.fintrack.transfer.dto.CreateTransferRequest;
 import com.fintrack.transfer.entity.Transfer;
+import com.fintrack.transfer.exception.IdempotencyKeyReusedException;
 import com.fintrack.transfer.repository.TransferRepository;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -28,14 +30,19 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -97,7 +104,7 @@ class TransferServiceTest {
         bothAccountsAreLockable();
         savesAreEchoed();
 
-        Transfer transfer = service.transfer(userId, request(low, high, "40.00"), KEY);
+        Transfer transfer = service.transfer(userId, request(low, high, "40.00"), KEY).transfer();
 
         assertThat(lowAccount.getCurrentBalance()).isEqualByComparingTo("60.00");
         assertThat(highAccount.getCurrentBalance()).isEqualByComparingTo("60.00");
@@ -205,6 +212,120 @@ class TransferServiceTest {
 
         assertThatThrownBy(() -> service.transfer(userId, future, KEY)).isInstanceOf(InvalidRequestException.class);
         verify(accountService, never()).getForUpdate(any(), any());
+    }
+
+    // ---- idempotency ----
+
+    private Transfer earlierTransfer(UUID from, UUID to, String amount) {
+        Transfer earlier = new Transfer(userId, from, to, new BigDecimal(amount), null, TODAY, KEY);
+        ReflectionTestUtils.setField(earlier, "id", UUID.randomUUID());
+        return earlier;
+    }
+
+    @Test
+    void repeatingARequestReturnsTheOriginalTransferAndMovesNoMoney() {
+        Transfer earlier = earlierTransfer(low, high, "40.00");
+        when(transferRepository.findByUserIdAndIdempotencyKey(userId, KEY)).thenReturn(Optional.of(earlier));
+
+        TransferResult result = service.transfer(userId, request(low, high, "40.00"), KEY);
+
+        assertThat(result.replayed()).isTrue();
+        assertThat(result.transfer()).isSameAs(earlier);
+        assertThat(lowAccount.getCurrentBalance()).isEqualByComparingTo("100.00");
+        verify(accountService, never()).getForUpdate(any(), any());
+        verify(transferRepository, never()).saveAndFlush(any());
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    void aRequestThatLosesTheRaceIsRecognisedAfterTheLocksAreHeld() {
+        // Nothing existed at the first check, but the other request committed while we waited for the lock.
+        Transfer earlier = earlierTransfer(low, high, "40.00");
+        when(transferRepository.findByUserIdAndIdempotencyKey(userId, KEY))
+                .thenReturn(Optional.empty(), Optional.of(earlier));
+        bothAccountsAreLockable();
+
+        TransferResult result = service.transfer(userId, request(low, high, "40.00"), KEY);
+
+        assertThat(result.replayed()).isTrue();
+        assertThat(lowAccount.getCurrentBalance()).isEqualByComparingTo("100.00");
+        assertThat(highAccount.getCurrentBalance()).isEqualByComparingTo("20.00");
+        verify(transferRepository, never()).saveAndFlush(any());
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    void reusingAKeyWithADifferentAmountOrAccountIsRefused() {
+        Transfer earlier = earlierTransfer(low, high, "40.00");
+        when(transferRepository.findByUserIdAndIdempotencyKey(userId, KEY)).thenReturn(Optional.of(earlier));
+
+        assertThatThrownBy(() -> service.transfer(userId, request(low, high, "41.00"), KEY))
+                .isInstanceOf(IdempotencyKeyReusedException.class);
+        assertThatThrownBy(() -> service.transfer(userId, request(high, low, "40.00"), KEY))
+                .isInstanceOf(IdempotencyKeyReusedException.class);
+        assertThatThrownBy(() -> service.transfer(userId, request(low, new UUID(3, 0), "40.00"), KEY))
+                .isInstanceOf(IdempotencyKeyReusedException.class);
+    }
+
+    @Test
+    void sameAmountWrittenWithDifferentScaleIsTheSameRequest() {
+        Transfer earlier = earlierTransfer(low, high, "40.00");
+        when(transferRepository.findByUserIdAndIdempotencyKey(userId, KEY)).thenReturn(Optional.of(earlier));
+
+        assertThat(service.transfer(userId, request(low, high, "40"), KEY).replayed()).isTrue();
+    }
+
+    @Test
+    void keysAreLookedUpPerUser() {
+        bothAccountsAreLockable();
+        savesAreEchoed();
+
+        service.transfer(userId, request(low, high, "10.00"), KEY);
+
+        verify(transferRepository, atLeastOnce()).findByUserIdAndIdempotencyKey(userId, KEY);
+    }
+
+    @Test
+    void aSimultaneousRequestWithTheSameKeyAndOtherAccountsIsReportedAsKeyReuse() {
+        bothAccountsAreLockable();
+        when(transferRepository.saveAndFlush(any(Transfer.class))).thenThrow(new DataIntegrityViolationException(
+                "duplicate", new RuntimeException("violates unique constraint \"uq_transfers_user_idempotency_key\"")));
+
+        assertThatThrownBy(() -> service.transfer(userId, request(low, high, "10.00"), KEY))
+                .isInstanceOf(IdempotencyKeyReusedException.class);
+    }
+
+    @Test
+    void otherConstraintViolationsAreNotMistakenForKeyReuse() {
+        bothAccountsAreLockable();
+        when(transferRepository.saveAndFlush(any(Transfer.class))).thenThrow(new DataIntegrityViolationException(
+                "other", new RuntimeException("violates check constraint \"ck_transfers_amount_positive\"")));
+
+        assertThatThrownBy(() -> service.transfer(userId, request(low, high, "10.00"), KEY))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"has space", "tab\there", "naïve-key"})
+    void malformedKeysAreRejected(String key) {
+        assertThatThrownBy(() -> service.transfer(userId, request(low, high, "10.00"), key))
+                .isInstanceOf(InvalidRequestException.class);
+        verify(accountService, never()).getForUpdate(any(), any());
+    }
+
+    @Test
+    void keysLongerThan100CharactersAreRejected() {
+        assertThatThrownBy(() -> service.transfer(userId, request(low, high, "10.00"), "k".repeat(101)))
+                .isInstanceOf(InvalidRequestException.class);
+    }
+
+    @Test
+    void aKeyOfExactly100CharactersIsAccepted() {
+        bothAccountsAreLockable();
+        savesAreEchoed();
+
+        assertThat(service.transfer(userId, request(low, high, "10.00"), "k".repeat(100)).replayed()).isFalse();
     }
 
     @Test
