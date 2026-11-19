@@ -301,7 +301,7 @@ class TransactionServiceTest {
         assertThat(account.getCurrentBalance()).isEqualByComparingTo("130.00");
         assertThat(transaction.isReversed()).isTrue();
         assertThat(transaction.getReversedAt()).isEqualTo(NOW);
-        verify(transactionRepository, never()).delete(any());
+        verify(transactionRepository, never()).delete(any(Transaction.class));
     }
 
     @Test

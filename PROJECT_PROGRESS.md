@@ -28,8 +28,8 @@ at the end of each phase.
 - [x] Transaction entity and migration
 - [x] Income and expense services
 - [x] Transaction REST endpoints
-- [ ] Filtering and pagination
-- [ ] Transaction unit and integration tests
+- [x] Filtering and pagination
+- [x] Transaction unit and integration tests
 
 ## Phase 5 – Transfers
 - [ ] Transfer entity and migration
