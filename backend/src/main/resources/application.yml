@@ -15,6 +15,12 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+app:
+  jwt:
+    # No default: generate one, e.g. `openssl rand -base64 48`, and set JWT_SECRET.
+    secret: ${JWT_SECRET:}
+    expiration: PT1H
+
 management:
   endpoints:
     web:
