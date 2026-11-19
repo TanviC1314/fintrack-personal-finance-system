@@ -7,7 +7,7 @@ at the end of each phase.
 - [x] Initialize repository and add README
 - [x] Configure Spring Boot and Maven
 - [x] Add project package structure
-- [ ] Configure PostgreSQL and Docker Compose
+- [x] Configure PostgreSQL and Docker Compose
 - [ ] Add Flyway database migration setup
 
 ## Phase 2 – Database and authentication

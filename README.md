@@ -50,7 +50,17 @@ Detailed architecture and ER diagrams will be added with the database design.
 
 ## Getting started
 
-Setup instructions will be added as the project foundation lands. See
+Prerequisites: JDK 21 and Docker. Maven is provided by the wrapper (`backend/mvnw`).
+
+Start PostgreSQL locally:
+
+```bash
+cp .env.example .env        # then set your own POSTGRES_PASSWORD in .env
+docker compose up -d --wait
+```
+
+The database listens on `127.0.0.1:5432` only. `.env` is git-ignored; never commit it.
+Full setup instructions will be added as the project foundation lands. See
 [PROJECT_PROGRESS.md](PROJECT_PROGRESS.md) for current status.
 
 ## Future improvements
