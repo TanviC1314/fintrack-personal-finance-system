@@ -11,6 +11,8 @@ const DashboardPage = lazy(() => import('./features/dashboard/DashboardPage'))
 const AccountsPage = lazy(() => import('./features/accounts/AccountsPage'))
 const TransactionsPage = lazy(() => import('./features/transactions/TransactionsPage'))
 const AddTransactionPage = lazy(() => import('./features/transactions/AddTransactionPage'))
+const TransfersPage = lazy(() => import('./features/transfers/TransfersPage'))
+const BudgetsPage = lazy(() => import('./features/budgets/BudgetsPage'))
 
 export default function App() {
   return (
@@ -25,6 +27,8 @@ export default function App() {
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/transactions/new" element={<AddTransactionPage />} />
+          <Route path="/transfers" element={<TransfersPage />} />
+          <Route path="/budgets" element={<BudgetsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>

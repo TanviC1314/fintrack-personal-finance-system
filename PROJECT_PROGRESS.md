@@ -50,7 +50,7 @@ at the end of each phase.
 - [x] Dashboard layout
 - [x] Account screens
 - [x] Transaction screens
-- [ ] Transfer and budget screens
+- [x] Transfer and budget screens
 - [ ] API integration
 
 ## Phase 8 – Quality and delivery

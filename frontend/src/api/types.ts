@@ -77,3 +77,29 @@ export interface Category {
   name: string
   createdAt: string
 }
+
+export interface Transfer {
+  id: string
+  sourceAccountId: string
+  destinationAccountId: string
+  amount: number
+  description: string | null
+  transferDate: string
+  createdAt: string
+}
+
+export interface Budget {
+  id: string
+  categoryId: string
+  categoryName: string
+  /** The month the budget applies to, as yyyy-MM. */
+  month: string
+  currency: string
+  amount: number
+  spent: number
+  /** Negative once the budget is exceeded. */
+  remaining: number
+  /** Spent as a percentage of the amount; may be above 100. */
+  utilisationPercent: number
+  exceeded: boolean
+}
