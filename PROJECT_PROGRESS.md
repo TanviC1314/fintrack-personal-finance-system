@@ -11,7 +11,7 @@ at the end of each phase.
 - [x] Add Flyway database migration setup
 
 ## Phase 2 – Database and authentication
-- [ ] User entity and repository
+- [x] User entity and repository
 - [ ] Registration DTOs and validation
 - [ ] User registration service
 - [ ] Authentication and JWT security
