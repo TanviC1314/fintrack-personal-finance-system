@@ -35,7 +35,7 @@ at the end of each phase.
 - [x] Transfer entity and migration
 - [x] Atomic money transfer service
 - [x] Idempotency protection
-- [ ] Transfer API endpoints
+- [x] Transfer API endpoints
 - [ ] Rollback and concurrency tests
 
 ## Phase 6 – Dashboard and budgets

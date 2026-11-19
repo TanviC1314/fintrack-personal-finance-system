@@ -24,6 +24,11 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -102,6 +107,23 @@ public class TransferService {
         transactionRepository.save(Transaction.transferLeg(destination, TransactionType.TRANSFER_IN, amount,
                 legDescription(description, "Transfer from " + source.getName()), date, transfer.getId()));
         return new TransferResult(transfer, false);
+    }
+
+    /**
+     * The caller's transfers, newest first, optionally only those into or out of one account. The order
+     * is fixed (a client-supplied sort is ignored) and ends in the id so pages never repeat or skip rows.
+     */
+    @Transactional(readOnly = true)
+    public Page<Transfer> list(UUID userId, UUID accountId, Pageable pageable) {
+        Specification<Transfer> spec = (root, query, cb) -> cb.equal(root.get("userId"), userId);
+        if (accountId != null) {
+            spec = spec.and((root, query, cb) -> cb.or(
+                    cb.equal(root.get("sourceAccountId"), accountId),
+                    cb.equal(root.get("destinationAccountId"), accountId)));
+        }
+        Pageable newestFirst = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
+        return transferRepository.findAll(spec, newestFirst);
     }
 
     /** The same key with the same accounts and amount is a retry; anything else is a client mistake. */
