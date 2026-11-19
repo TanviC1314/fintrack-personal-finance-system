@@ -36,7 +36,7 @@ at the end of each phase.
 - [x] Atomic money transfer service
 - [x] Idempotency protection
 - [x] Transfer API endpoints
-- [ ] Rollback and concurrency tests
+- [x] Rollback and concurrency tests
 
 ## Phase 6 – Dashboard and budgets
 - [ ] Dashboard aggregation queries

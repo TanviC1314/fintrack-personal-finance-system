@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintrack.account.entity.Account;
 import com.fintrack.account.repository.AccountRepository;
+import com.fintrack.support.Concurrency;
 import com.fintrack.support.PostgresTestContainerConfig;
 import com.fintrack.support.TestApi;
 import com.fintrack.support.TestUsers;
@@ -16,10 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -147,29 +144,7 @@ class TransactionConsistencyIntegrationTest {
         assertBalanceMatchesLedger(account);
     }
 
-    /** Runs the task on {@code threads} threads released at the same instant and collects the results. */
     private static <T> List<T> runConcurrently(int threads, Callable<T> task) throws Exception {
-        ExecutorService pool = Executors.newFixedThreadPool(threads);
-        try {
-            CountDownLatch ready = new CountDownLatch(threads);
-            CountDownLatch go = new CountDownLatch(1);
-            List<Future<T>> futures = new ArrayList<>();
-            for (int i = 0; i < threads; i++) {
-                futures.add(pool.submit(() -> {
-                    ready.countDown();
-                    go.await();
-                    return task.call();
-                }));
-            }
-            ready.await();
-            go.countDown();
-            List<T> results = new ArrayList<>();
-            for (Future<T> future : futures) {
-                results.add(future.get());
-            }
-            return results;
-        } finally {
-            pool.shutdownNow();
-        }
+        return Concurrency.runTogether(threads, task);
     }
 }
