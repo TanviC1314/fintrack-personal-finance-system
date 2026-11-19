@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -51,6 +52,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex) {
         return problem(HttpStatus.UNAUTHORIZED, "Authentication failed", ex.getMessage());
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    ProblemDetail handleConflict(ConflictException ex) {
+        return problem(HttpStatus.CONFLICT, "Conflict", ex.getMessage());
+    }
+
+    // Another request changed the same row between our read and write; the client can retry.
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    ProblemDetail handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
+        return problem(HttpStatus.CONFLICT, "Concurrent modification",
+                "The resource was modified by another request. Reload it and try again.");
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
