@@ -1,5 +1,6 @@
 package com.fintrack.category.service;
 
+import com.fintrack.budget.repository.BudgetRepository;
 import com.fintrack.category.entity.Category;
 import com.fintrack.category.exception.CategoryInUseException;
 import com.fintrack.category.exception.CategoryNameAlreadyExistsException;
@@ -17,10 +18,13 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final TransactionRepository transactionRepository;
+    private final BudgetRepository budgetRepository;
 
-    public CategoryService(CategoryRepository categoryRepository, TransactionRepository transactionRepository) {
+    public CategoryService(CategoryRepository categoryRepository, TransactionRepository transactionRepository,
+                           BudgetRepository budgetRepository) {
         this.categoryRepository = categoryRepository;
         this.transactionRepository = transactionRepository;
+        this.budgetRepository = budgetRepository;
     }
 
     @Transactional
@@ -67,7 +71,7 @@ public class CategoryService {
     public void delete(UUID userId, UUID categoryId) {
         Category category = getOwned(userId, categoryId);
         // Deleting a category that history points at would either orphan or silently re-label that history.
-        if (transactionRepository.existsByCategoryId(categoryId)) {
+        if (transactionRepository.existsByCategoryId(categoryId) || budgetRepository.existsByCategoryId(categoryId)) {
             throw new CategoryInUseException();
         }
         categoryRepository.delete(category);

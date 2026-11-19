@@ -74,6 +74,7 @@ erDiagram
         uuid id PK
         uuid user_id FK
         uuid category_id FK
+        varchar currency "ISO 4217, spending counted in this currency only"
         date month "first day of month"
         numeric amount "19,2 > 0"
     }
@@ -95,7 +96,7 @@ erDiagram
 | `transactions` | 4 | built |
 | `transfers` | 5 | built |
 | `categories` | 6 | built |
-| `budgets` | 6 | planned |
+| `budgets` | 6 | built |
 | `audit_log` | 5 | built |
 
 **Note on transaction categories.** Transactions used to carry a free-text label. The category migration created one `categories` row per user for each distinct label (labels differing only in letter case became one category), pointed each transaction at its category through `category_id`, and dropped the text column. A test runs that migration against rows written under the old schema. The transfer link (`transfer_id`) was added by the transfers migration, with a CHECK that only transfer legs carry it and a unique index so each transfer has exactly one debit and one credit leg.
@@ -109,8 +110,9 @@ erDiagram
 - A **transfer** is one business event that produces **two** transaction rows: a
   `TRANSFER_OUT` on the source account and a `TRANSFER_IN` on the destination. Both reference the
   transfer, so history shows both sides and they can never be edited independently.
-- A **budget** is a spending limit for one category in one calendar month. Actual spending
-  is not stored; it is calculated from transactions with a SQL aggregate.
+- A **budget** is a spending limit for one category in one calendar month and currency (unique per
+  category, month and currency). Actual spending is not stored; it is calculated from non-reversed
+  expenses with a SQL aggregate every time, so it cannot drift out of date.
 - **audit_log** is append-only: who did what to which entity and when.
 
 ## Account balance: cached value or calculated from the ledger?

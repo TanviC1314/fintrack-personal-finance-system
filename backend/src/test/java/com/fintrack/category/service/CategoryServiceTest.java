@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fintrack.budget.repository.BudgetRepository;
 import com.fintrack.category.entity.Category;
 import com.fintrack.category.exception.CategoryInUseException;
 import com.fintrack.category.exception.CategoryNameAlreadyExistsException;
@@ -32,6 +33,8 @@ class CategoryServiceTest {
     private CategoryRepository categoryRepository;
     @Mock
     private TransactionRepository transactionRepository;
+    @Mock
+    private BudgetRepository budgetRepository;
     @InjectMocks
     private CategoryService service;
 
@@ -114,6 +117,17 @@ class CategoryServiceTest {
         Category category = new Category(userId, "Food");
         when(categoryRepository.findByIdAndUserId(categoryId, userId)).thenReturn(Optional.of(category));
         when(transactionRepository.existsByCategoryId(categoryId)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.delete(userId, categoryId)).isInstanceOf(CategoryInUseException.class);
+        verify(categoryRepository, never()).delete(any(Category.class));
+    }
+
+    @Test
+    void aCategoryWithBudgetsCannotBeDeleted() {
+        Category category = new Category(userId, "Food");
+        when(categoryRepository.findByIdAndUserId(categoryId, userId)).thenReturn(Optional.of(category));
+        when(transactionRepository.existsByCategoryId(categoryId)).thenReturn(false);
+        when(budgetRepository.existsByCategoryId(categoryId)).thenReturn(true);
 
         assertThatThrownBy(() -> service.delete(userId, categoryId)).isInstanceOf(CategoryInUseException.class);
         verify(categoryRepository, never()).delete(any(Category.class));
