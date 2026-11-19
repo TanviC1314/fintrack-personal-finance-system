@@ -45,7 +45,7 @@ at the end of each phase.
 - [x] Budget validation and tests
 
 ## Phase 7 – Frontend
-- [ ] React + TypeScript setup
+- [x] React + TypeScript setup
 - [ ] Authentication pages
 - [ ] Dashboard layout
 - [ ] Account screens
