@@ -49,7 +49,7 @@ at the end of each phase.
 - [x] Authentication pages
 - [x] Dashboard layout
 - [x] Account screens
-- [ ] Transaction screens
+- [x] Transaction screens
 - [ ] Transfer and budget screens
 - [ ] API integration
 

@@ -9,6 +9,8 @@ import NotFoundPage from './pages/NotFoundPage'
 // Pages load on demand so the charting library is not part of the login screen's download.
 const DashboardPage = lazy(() => import('./features/dashboard/DashboardPage'))
 const AccountsPage = lazy(() => import('./features/accounts/AccountsPage'))
+const TransactionsPage = lazy(() => import('./features/transactions/TransactionsPage'))
+const AddTransactionPage = lazy(() => import('./features/transactions/AddTransactionPage'))
 
 export default function App() {
   return (
@@ -21,6 +23,8 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
+          <Route path="/transactions" element={<TransactionsPage />} />
+          <Route path="/transactions/new" element={<AddTransactionPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>

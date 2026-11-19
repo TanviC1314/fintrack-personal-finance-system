@@ -62,3 +62,18 @@ export interface CategorySpendingReport {
   totalSpent: number
   categories: { categoryId: string | null; categoryName: string; amount: number; percentage: number }[]
 }
+
+export interface Page<T> {
+  content: T[]
+  /** Zero-based page number. */
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+}
+
+export interface Category {
+  id: string
+  name: string
+  createdAt: string
+}
