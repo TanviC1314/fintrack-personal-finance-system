@@ -49,10 +49,10 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!-- BCrypt password hashing (the full Spring Security starter is added with JWT auth) -->
+        <!-- Filter chain, BCrypt and authorisation rules -->
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-crypto</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <!-- Signing and verifying JWT access tokens -->
         <dependency>
@@ -86,6 +86,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
         <!-- Real PostgreSQL in integration tests instead of an in-memory substitute -->
