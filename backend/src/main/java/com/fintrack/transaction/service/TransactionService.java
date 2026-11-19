@@ -5,6 +5,7 @@ import com.fintrack.account.exception.AccountArchivedException;
 import com.fintrack.account.service.AccountService;
 import com.fintrack.common.exception.InvalidRequestException;
 import com.fintrack.common.exception.ResourceNotFoundException;
+import com.fintrack.common.validation.DateRules;
 import com.fintrack.transaction.dto.CreateTransactionRequest;
 import com.fintrack.transaction.dto.TransactionFilter;
 import com.fintrack.transaction.dto.UpdateTransactionRequest;
@@ -185,11 +186,8 @@ public class TransactionService {
         }
     }
 
-    /** Allows one day ahead of UTC so a user in a timezone ahead of UTC can record "today". */
     private void validateDate(LocalDate date) {
-        if (date.isAfter(LocalDate.now(clock).plusDays(1))) {
-            throw new InvalidRequestException("Transaction date cannot be in the future");
-        }
+        DateRules.requireNotInFuture(date, clock);
     }
 
     private static BigDecimal normalise(BigDecimal amount) {

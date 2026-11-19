@@ -33,7 +33,7 @@ at the end of each phase.
 
 ## Phase 5 – Transfers
 - [x] Transfer entity and migration
-- [ ] Atomic money transfer service
+- [x] Atomic money transfer service
 - [ ] Idempotency protection
 - [ ] Transfer API endpoints
 - [ ] Rollback and concurrency tests
