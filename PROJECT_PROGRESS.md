@@ -41,7 +41,7 @@ at the end of each phase.
 ## Phase 6 – Dashboard and budgets
 - [ ] Dashboard aggregation queries
 - [ ] Financial summary endpoints
-- [ ] Categories and budget management
+- [ ] Categories and budget management (categories done)
 - [ ] Budget validation and tests
 
 ## Phase 7 – Frontend
