@@ -14,8 +14,8 @@ at the end of each phase.
 - [x] User entity and repository
 - [x] Registration DTOs and validation
 - [x] User registration service
-- [ ] Authentication and JWT security
-- [ ] Authentication unit and integration tests
+- [x] Authentication and JWT security
+- [x] Authentication unit and integration tests
 
 ## Phase 3 – Account management
 - [ ] Account entity and migration
