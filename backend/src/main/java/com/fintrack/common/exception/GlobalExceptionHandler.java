@@ -54,6 +54,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problem(HttpStatus.UNAUTHORIZED, "Authentication failed", ex.getMessage());
     }
 
+    @ExceptionHandler(BusinessRuleException.class)
+    ProblemDetail handleBusinessRule(BusinessRuleException ex) {
+        return problem(HttpStatus.UNPROCESSABLE_ENTITY, "Business rule violated", ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidRequestException.class)
+    ProblemDetail handleInvalidRequest(InvalidRequestException ex) {
+        return problem(HttpStatus.BAD_REQUEST, "Invalid request", ex.getMessage());
+    }
+
     @ExceptionHandler(ConflictException.class)
     ProblemDetail handleConflict(ConflictException ex) {
         return problem(HttpStatus.CONFLICT, "Conflict", ex.getMessage());

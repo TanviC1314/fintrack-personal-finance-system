@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -54,6 +55,17 @@ public class AccountService {
     @Transactional(readOnly = true)
     public Account get(UUID userId, UUID accountId) {
         return findOwned(userId, accountId);
+    }
+
+    /**
+     * Loads the caller's account and locks its row until the surrounding transaction ends. Every
+     * balance change must start here so concurrent changes to one account run one after another.
+     * Must be called inside an existing transaction.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public Account getForUpdate(UUID userId, UUID accountId) {
+        return accountRepository.findByIdAndUserIdForUpdate(accountId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
     }
 
     @Transactional

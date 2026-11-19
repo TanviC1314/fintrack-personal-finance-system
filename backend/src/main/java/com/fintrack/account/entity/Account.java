@@ -1,5 +1,6 @@
 package com.fintrack.account.entity;
 
+import com.fintrack.account.exception.InsufficientFundsException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -78,6 +79,30 @@ public class Account {
 
     public void archive() {
         this.status = AccountStatus.ARCHIVED;
+    }
+
+    /**
+     * Adds money. Callers must hold the row lock (see AccountRepository#findByIdAndUserIdForUpdate)
+     * so the read-modify-write on the balance cannot interleave with another request.
+     */
+    public void credit(BigDecimal amount) {
+        requirePositive(amount);
+        currentBalance = currentBalance.add(amount);
+    }
+
+    /** Removes money; the balance can never go below zero. Same locking requirement as {@link #credit}. */
+    public void debit(BigDecimal amount) {
+        requirePositive(amount);
+        if (currentBalance.compareTo(amount) < 0) {
+            throw new InsufficientFundsException();
+        }
+        currentBalance = currentBalance.subtract(amount);
+    }
+
+    private static void requirePositive(BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
     }
 
     public boolean isActive() {
