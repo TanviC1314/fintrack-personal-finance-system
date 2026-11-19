@@ -1,4 +1,4 @@
-import { LayoutDashboard, LineChart, LogOut, Menu, X, type LucideIcon } from 'lucide-react'
+import { Landmark, LayoutDashboard, LineChart, LogOut, Menu, X, type LucideIcon } from 'lucide-react'
 import { Suspense, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
@@ -11,7 +11,10 @@ interface NavItem {
   end?: boolean
 }
 
-const NAV_ITEMS: NavItem[] = [{ to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true }]
+const NAV_ITEMS: NavItem[] = [
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/accounts', label: 'Accounts', icon: Landmark },
+]
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   return (

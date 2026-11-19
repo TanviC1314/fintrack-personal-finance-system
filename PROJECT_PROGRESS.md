@@ -48,7 +48,7 @@ at the end of each phase.
 - [x] React + TypeScript setup
 - [x] Authentication pages
 - [x] Dashboard layout
-- [ ] Account screens
+- [x] Account screens
 - [ ] Transaction screens
 - [ ] Transfer and budget screens
 - [ ] API integration
