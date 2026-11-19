@@ -32,7 +32,7 @@ at the end of each phase.
 - [x] Transaction unit and integration tests
 
 ## Phase 5 – Transfers
-- [ ] Transfer entity and migration
+- [x] Transfer entity and migration
 - [ ] Atomic money transfer service
 - [ ] Idempotency protection
 - [ ] Transfer API endpoints

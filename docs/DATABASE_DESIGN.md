@@ -60,6 +60,8 @@ erDiagram
         uuid source_account_id FK
         uuid destination_account_id FK
         numeric amount "19,2 > 0"
+        varchar description
+        date transfer_date
         varchar idempotency_key "unique per user"
         timestamptz created_at
     }
@@ -90,8 +92,8 @@ erDiagram
 | --- | --- | --- |
 | `users` | 2 | built |
 | `accounts` | 3 | built |
-| `transactions` | 4 | being built |
-| `transfers` | 5 | planned |
+| `transactions` | 4 | built |
+| `transfers` | 5 | being built |
 | `categories`, `budgets` | 6 | planned |
 | `audit_log` | alongside the operations it records | planned |
 
@@ -99,7 +101,7 @@ erDiagram
 `transactions.category` is a plain text label of up to 50 characters. When categories are
 added, a migration will create a category row per distinct label for each user and replace the
 text column with the `category_id` foreign key shown above. The transfer link
-(`transfer_id`) is likewise added by the Phase 5 migration.
+(`transfer_id`) was added by the transfers migration, with a CHECK that only transfer legs carry it and a unique index so each transfer has exactly one debit and one credit leg.
 
 ## Relationships in plain language
 

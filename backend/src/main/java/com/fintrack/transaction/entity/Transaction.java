@@ -52,6 +52,10 @@ public class Transaction {
     @Column(name = "transaction_date", nullable = false)
     private LocalDate transactionDate;
 
+    // Set only on the two legs created by a transfer.
+    @Column(name = "transfer_id", updatable = false)
+    private UUID transferId;
+
     @Column(name = "reversed_at")
     private Instant reversedAt;
 
@@ -79,6 +83,17 @@ public class Transaction {
         this.category = category;
         this.description = description;
         this.transactionDate = transactionDate;
+    }
+
+    /** One side of a transfer: TRANSFER_OUT on the source account or TRANSFER_IN on the destination. */
+    public static Transaction transferLeg(Account account, TransactionType type, BigDecimal amount,
+                                          String description, LocalDate date, UUID transferId) {
+        if (!type.isTransfer()) {
+            throw new IllegalArgumentException("A transfer leg must be TRANSFER_IN or TRANSFER_OUT");
+        }
+        Transaction leg = new Transaction(account, type, amount, null, description, date);
+        leg.transferId = transferId;
+        return leg;
     }
 
     public void update(BigDecimal amount, String category, String description, LocalDate transactionDate) {
@@ -126,6 +141,10 @@ public class Transaction {
 
     public LocalDate getTransactionDate() {
         return transactionDate;
+    }
+
+    public UUID getTransferId() {
+        return transferId;
     }
 
     public Instant getReversedAt() {
