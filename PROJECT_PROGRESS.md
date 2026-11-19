@@ -19,7 +19,7 @@ at the end of each phase.
 
 ## Phase 3 – Account management
 - [x] Account entity and migration
-- [ ] Account repository
+- [x] Account repository
 - [ ] Account creation service
 - [ ] Account REST endpoints
 - [ ] Account validation and error handling tests
