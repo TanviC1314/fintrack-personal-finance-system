@@ -8,9 +8,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fintrack.category.entity.Category;
+import com.fintrack.category.exception.CategoryInUseException;
 import com.fintrack.category.exception.CategoryNameAlreadyExistsException;
 import com.fintrack.category.repository.CategoryRepository;
 import com.fintrack.common.exception.ResourceNotFoundException;
+import com.fintrack.transaction.repository.TransactionRepository;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,8 @@ class CategoryServiceTest {
 
     @Mock
     private CategoryRepository categoryRepository;
+    @Mock
+    private TransactionRepository transactionRepository;
     @InjectMocks
     private CategoryService service;
 
@@ -103,6 +107,16 @@ class CategoryServiceTest {
         service.delete(userId, categoryId);
 
         verify(categoryRepository).delete(category);
+    }
+
+    @Test
+    void aCategoryUsedByTransactionsCannotBeDeleted() {
+        Category category = new Category(userId, "Food");
+        when(categoryRepository.findByIdAndUserId(categoryId, userId)).thenReturn(Optional.of(category));
+        when(transactionRepository.existsByCategoryId(categoryId)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.delete(userId, categoryId)).isInstanceOf(CategoryInUseException.class);
+        verify(categoryRepository, never()).delete(any(Category.class));
     }
 
     @Test

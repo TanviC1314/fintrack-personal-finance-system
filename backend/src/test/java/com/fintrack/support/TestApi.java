@@ -6,7 +6,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintrack.support.TestUsers.Session;
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -17,6 +19,8 @@ public class TestApi {
 
     private final MockMvc mockMvc;
     private final ObjectMapper objectMapper;
+    // "user/name" -> category id, so tests can keep saying category("Food") many times.
+    private final Map<String, UUID> categories = new ConcurrentHashMap<>();
 
     public TestApi(MockMvc mockMvc, ObjectMapper objectMapper) {
         this.mockMvc = mockMvc;
@@ -34,11 +38,29 @@ public class TestApi {
         return UUID.fromString(objectMapper.readTree(body).get("id").asText());
     }
 
+    /** Returns the id of the caller's category with this name, creating it the first time it is asked for. */
+    public UUID categoryId(Session as, String name) {
+        return categories.computeIfAbsent(as.userId() + "/" + name.toLowerCase(), key -> {
+            try {
+                String body = mockMvc.perform(post("/api/v1/categories")
+                                .header(HttpHeaders.AUTHORIZATION, as.authorization())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"name\":\"" + name + "\"}"))
+                        .andReturn().getResponse().getContentAsString();
+                return UUID.fromString(objectMapper.readTree(body).get("id").asText());
+            } catch (Exception e) {
+                throw new IllegalStateException("Could not create category " + name, e);
+            }
+        });
+    }
+
+    /** @param category a category name (created if needed) or null for an uncategorised transaction */
     public ResultActions postTransaction(Session as, UUID accountId, String type, String amount,
                                          String category, String date) throws Exception {
+        String categoryJson = category == null ? "null" : "\"" + categoryId(as, category) + "\"";
         return postTransactionJson(as, """
-                {"accountId":"%s","type":"%s","amount":%s,"category":%s,"description":"test","transactionDate":"%s"}
-                """.formatted(accountId, type, amount, category == null ? "null" : "\"" + category + "\"", date));
+                {"accountId":"%s","type":"%s","amount":%s,"categoryId":%s,"description":"test","transactionDate":"%s"}
+                """.formatted(accountId, type, amount, categoryJson, date));
     }
 
     public ResultActions postTransactionJson(Session as, String json) throws Exception {

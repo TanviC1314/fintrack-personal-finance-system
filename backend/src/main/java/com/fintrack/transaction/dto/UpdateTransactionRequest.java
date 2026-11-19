@@ -6,8 +6,13 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
-/** Full replacement of the editable fields. The account and type of a transaction never change. */
+/**
+ * Full replacement of the editable fields. The account and type of a transaction never change.
+ *
+ * @param categoryId the category to use; null removes the category
+ */
 public record UpdateTransactionRequest(
 
         @NotNull(message = "Amount is required")
@@ -15,8 +20,7 @@ public record UpdateTransactionRequest(
         @Digits(integer = 17, fraction = 2, message = "Amount must have at most 17 digits and 2 decimal places")
         BigDecimal amount,
 
-        @Size(max = 50, message = "Category must be at most 50 characters")
-        String category,
+        UUID categoryId,
 
         @Size(max = 255, message = "Description must be at most 255 characters")
         String description,

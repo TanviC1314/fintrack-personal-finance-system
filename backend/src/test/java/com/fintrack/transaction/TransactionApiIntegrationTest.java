@@ -71,8 +71,14 @@ class TransactionApiIntegrationTest {
         return mockMvc.perform(delete("/api/v1/transactions/" + id).header(HttpHeaders.AUTHORIZATION, as.authorization()));
     }
 
-    private static String update(String amount) {
-        return "{\"amount\":" + amount + ",\"category\":\"Updated\",\"description\":\"edited\",\"transactionDate\":\"" + DAY + "\"}";
+    private String update(String amount) throws Exception {
+        return update(amount, api.categoryId(alice, "Updated"));
+    }
+
+    private static String update(String amount, UUID categoryId) {
+        String category = categoryId == null ? "null" : "\"" + categoryId + "\"";
+        return "{\"amount\":" + amount + ",\"categoryId\":" + category
+                + ",\"description\":\"edited\",\"transactionDate\":\"" + DAY + "\"}";
     }
 
     // ---- create ----
@@ -84,7 +90,8 @@ class TransactionApiIntegrationTest {
                 .andExpect(header().string(HttpHeaders.LOCATION, startsWith("/api/v1/transactions/")))
                 .andExpect(jsonPath("$.type").value("INCOME"))
                 .andExpect(jsonPath("$.amount").value(50.25))
-                .andExpect(jsonPath("$.category").value("Salary"))
+                .andExpect(jsonPath("$.categoryName").value("Salary"))
+                .andExpect(jsonPath("$.categoryId").exists())
                 .andExpect(jsonPath("$.accountId").value(aliceAccount.toString()))
                 .andExpect(jsonPath("$.reversedAt").doesNotExist());
 
@@ -169,13 +176,82 @@ class TransactionApiIntegrationTest {
     }
 
     @Test
-    void overlongCategoryAndDescriptionAreRejected() throws Exception {
+    void overlongDescriptionIsRejected() throws Exception {
         api.postTransactionJson(alice, """
-                {"accountId":"%s","type":"INCOME","amount":1.00,"category":"%s","description":"%s","transactionDate":"%s"}
-                """.formatted(aliceAccount, "c".repeat(51), "d".repeat(256), DAY))
+                {"accountId":"%s","type":"INCOME","amount":1.00,"description":"%s","transactionDate":"%s"}
+                """.formatted(aliceAccount, "d".repeat(256), DAY))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors[?(@.field=='category')]").exists())
                 .andExpect(jsonPath("$.errors[?(@.field=='description')]").exists());
+    }
+
+    // ---- categories ----
+
+    @Test
+    void unknownCategoryIsNotFoundAndChangesNothing() throws Exception {
+        api.postTransactionJson(alice, """
+                {"accountId":"%s","type":"EXPENSE","amount":10.00,"categoryId":"%s","transactionDate":"%s"}
+                """.formatted(aliceAccount, UUID.randomUUID(), DAY))
+                .andExpect(status().isNotFound());
+
+        assertThat(api.balanceOf(alice, aliceAccount)).isEqualByComparingTo("100.00");
+    }
+
+    @Test
+    void anotherUsersCategoryCannotBeUsed() throws Exception {
+        UUID bobsCategory = api.categoryId(bob, "Bobs private category");
+
+        api.postTransactionJson(alice, """
+                {"accountId":"%s","type":"EXPENSE","amount":10.00,"categoryId":"%s","transactionDate":"%s"}
+                """.formatted(aliceAccount, bobsCategory, DAY))
+                .andExpect(status().isNotFound());
+        UUID id = api.createTransaction(alice, aliceAccount, "EXPENSE", "10.00", null, DAY);
+        putTransaction(alice, id, update("10.00", bobsCategory)).andExpect(status().isNotFound());
+
+        assertThat(api.balanceOf(alice, aliceAccount)).isEqualByComparingTo("90.00");
+    }
+
+    @Test
+    void aTransactionWithoutACategoryHasNullCategoryFields() throws Exception {
+        UUID id = api.createTransaction(alice, aliceAccount, "EXPENSE", "10.00", null, DAY);
+
+        getTransaction(alice, id)
+                .andExpect(jsonPath("$.categoryId").doesNotExist())
+                .andExpect(jsonPath("$.categoryName").doesNotExist());
+    }
+
+    @Test
+    void updatingCanChangeAndRemoveTheCategory() throws Exception {
+        UUID id = api.createTransaction(alice, aliceAccount, "EXPENSE", "10.00", "Food", DAY);
+
+        putTransaction(alice, id, update("10.00", api.categoryId(alice, "Transport")))
+                .andExpect(jsonPath("$.categoryName").value("Transport"));
+        putTransaction(alice, id, update("10.00", null))
+                .andExpect(jsonPath("$.categoryId").doesNotExist());
+    }
+
+    @Test
+    void aCategoryInUseCannotBeDeletedButAnUnusedOneCan() throws Exception {
+        UUID used = api.categoryId(alice, "Used");
+        UUID unused = api.categoryId(alice, "Unused");
+        api.createTransaction(alice, aliceAccount, "EXPENSE", "10.00", "Used", DAY);
+
+        mockMvc.perform(delete("/api/v1/categories/" + used).header(HttpHeaders.AUTHORIZATION, alice.authorization()))
+                .andExpect(status().isConflict());
+        mockMvc.perform(delete("/api/v1/categories/" + unused).header(HttpHeaders.AUTHORIZATION, alice.authorization()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void renamingACategoryIsReflectedOnItsTransactions() throws Exception {
+        UUID id = api.createTransaction(alice, aliceAccount, "EXPENSE", "10.00", "Food", DAY);
+        UUID category = api.categoryId(alice, "Food");
+
+        mockMvc.perform(put("/api/v1/categories/" + category)
+                .header(HttpHeaders.AUTHORIZATION, alice.authorization())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Eating out\"}")).andExpect(status().isOk());
+
+        getTransaction(alice, id).andExpect(jsonPath("$.categoryName").value("Eating out"));
     }
 
     // ---- accounts ----
@@ -211,7 +287,7 @@ class TransactionApiIntegrationTest {
         putTransaction(alice, id, update("50.00"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.amount").value(50.00))
-                .andExpect(jsonPath("$.category").value("Updated"));
+                .andExpect(jsonPath("$.categoryName").value("Updated"));
 
         assertThat(api.balanceOf(alice, aliceAccount)).isEqualByComparingTo("50.00");
     }

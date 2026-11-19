@@ -75,7 +75,7 @@ class TransactionConsistencyIntegrationTest {
                 .put("/api/v1/transactions/" + food)
                 .header(HttpHeaders.AUTHORIZATION, alice.authorization())
                 .contentType("application/json")
-                .content("{\"amount\":120.10,\"category\":\"Food\",\"transactionDate\":\"" + DAY + "\"}"));
+                .content("{\"amount\":120.10,\"transactionDate\":\"" + DAY + "\"}"));
         mockMvc.perform(delete("/api/v1/transactions/" + rent).header(HttpHeaders.AUTHORIZATION, alice.authorization()));
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                 .put("/api/v1/transactions/" + salary)

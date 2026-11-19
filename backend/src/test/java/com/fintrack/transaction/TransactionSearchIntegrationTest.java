@@ -105,8 +105,10 @@ class TransactionSearchIntegrationTest {
     }
 
     @Test
-    void filterByCategoryIgnoresCase() throws Exception {
-        assertThat(idsOf(search(alice, "?category=fOOd"))).containsExactlyElementsOf(ids(lunch, grocery));
+    void filterByCategory() throws Exception {
+        UUID food = api.categoryId(alice, "Food");
+
+        assertThat(idsOf(search(alice, "?categoryId=" + food))).containsExactlyElementsOf(ids(lunch, grocery));
     }
 
     @Test
@@ -118,13 +120,14 @@ class TransactionSearchIntegrationTest {
 
     @Test
     void filtersCombineWithAnd() throws Exception {
-        assertThat(idsOf(search(alice, "?accountId=" + accountA + "&category=food&type=EXPENSE&from=2025-01-01")))
+        assertThat(idsOf(search(alice, "?accountId=" + accountA + "&categoryId=" + api.categoryId(alice, "Food")
+                + "&type=EXPENSE&from=2025-01-01")))
                 .containsExactly(grocery.toString());
     }
 
     @Test
     void aFilterThatMatchesNothingReturnsAnEmptyPage() throws Exception {
-        search(alice, "?category=nothing-like-this")
+        search(alice, "?categoryId=" + UUID.randomUUID())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(0)))
                 .andExpect(jsonPath("$.totalElements").value(0));

@@ -2,7 +2,6 @@ package com.fintrack.transaction.repository;
 
 import com.fintrack.transaction.dto.TransactionFilter;
 import com.fintrack.transaction.entity.Transaction;
-import java.util.Locale;
 import java.util.UUID;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -21,9 +20,8 @@ public final class TransactionSpecifications {
         if (filter.type() != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("type"), filter.type()));
         }
-        if (filter.category() != null) {
-            String category = filter.category().toLowerCase(Locale.ROOT);
-            spec = spec.and((root, query, cb) -> cb.equal(cb.lower(root.get("category")), category));
+        if (filter.categoryId() != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("categoryId"), filter.categoryId()));
         }
         if (filter.from() != null) {
             spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("transactionDate"), filter.from()));

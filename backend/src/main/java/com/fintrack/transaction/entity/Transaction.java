@@ -1,6 +1,7 @@
 package com.fintrack.transaction.entity;
 
 import com.fintrack.account.entity.Account;
+import com.fintrack.category.entity.Category;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -43,8 +44,13 @@ public class Transaction {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
-    @Column(length = 50)
-    private String category;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
+    // Read-only copy of the foreign key so filters and aggregates need no join and the id is always available.
+    @Column(name = "category_id", insertable = false, updatable = false)
+    private UUID categoryId;
 
     @Column(length = 255)
     private String description;
@@ -74,13 +80,14 @@ public class Transaction {
         // required by JPA
     }
 
-    public Transaction(Account account, TransactionType type, BigDecimal amount, String category,
+    public Transaction(Account account, TransactionType type, BigDecimal amount, Category category,
                        String description, LocalDate transactionDate) {
         this.account = account;
         this.accountId = account.getId();
         this.type = type;
         this.amount = amount;
         this.category = category;
+        this.categoryId = category == null ? null : category.getId();
         this.description = description;
         this.transactionDate = transactionDate;
     }
@@ -96,9 +103,10 @@ public class Transaction {
         return leg;
     }
 
-    public void update(BigDecimal amount, String category, String description, LocalDate transactionDate) {
+    public void update(BigDecimal amount, Category category, String description, LocalDate transactionDate) {
         this.amount = amount;
         this.category = category;
+        this.categoryId = category == null ? null : category.getId();
         this.description = description;
         this.transactionDate = transactionDate;
     }
@@ -131,8 +139,12 @@ public class Transaction {
         return amount;
     }
 
-    public String getCategory() {
+    public Category getCategory() {
         return category;
+    }
+
+    public UUID getCategoryId() {
+        return categoryId;
     }
 
     public String getDescription() {

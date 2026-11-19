@@ -13,6 +13,8 @@ import com.fintrack.account.exception.AccountArchivedException;
 import com.fintrack.account.exception.InsufficientFundsException;
 import com.fintrack.account.service.AccountService;
 import com.fintrack.audit.service.AuditService;
+import com.fintrack.category.entity.Category;
+import com.fintrack.category.service.CategoryService;
 import com.fintrack.common.exception.InvalidRequestException;
 import com.fintrack.common.exception.ResourceNotFoundException;
 import com.fintrack.transaction.dto.CreateTransactionRequest;
@@ -51,6 +53,8 @@ class TransactionServiceTest {
     @Mock
     private AccountService accountService;
     @Mock
+    private CategoryService categoryService;
+    @Mock
     private AuditService auditService;
 
     private TransactionService service;
@@ -58,7 +62,7 @@ class TransactionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new TransactionService(transactionRepository, accountService, auditService,
+        service = new TransactionService(transactionRepository, accountService, categoryService, auditService,
                 Clock.fixed(NOW, ZoneOffset.UTC));
         account = new Account(userId, "Main", AccountType.CURRENT, "EUR", new BigDecimal("100.00"));
         ReflectionTestUtils.setField(account, "id", accountId);
@@ -71,20 +75,20 @@ class TransactionServiceTest {
     }
 
     private CreateTransactionRequest create(TransactionType type, String amount, LocalDate date) {
-        return new CreateTransactionRequest(accountId, type, new BigDecimal(amount), "Food", "Lunch", date);
+        return new CreateTransactionRequest(accountId, type, new BigDecimal(amount), null, "Lunch", date);
     }
 
     /** An existing transaction whose effect is already reflected in the account balance. */
     private Transaction existing(TransactionType type, String amount) {
         accountIsLockable();
         when(transactionRepository.findAccountIdByIdAndOwner(transactionId, userId)).thenReturn(Optional.of(accountId));
-        Transaction transaction = new Transaction(account, type, new BigDecimal(amount), "Food", "Lunch", TODAY);
+        Transaction transaction = new Transaction(account, type, new BigDecimal(amount), null, "Lunch", TODAY);
         when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(transaction));
         return transaction;
     }
 
     private UpdateTransactionRequest update(String amount) {
-        return new UpdateTransactionRequest(new BigDecimal(amount), "Groceries", "Weekly shop", TODAY);
+        return new UpdateTransactionRequest(new BigDecimal(amount), null, "Weekly shop", TODAY);
     }
 
     // ---- create ----
@@ -120,10 +124,10 @@ class TransactionServiceTest {
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Transaction saved = service.create(userId, new CreateTransactionRequest(
-                accountId, TransactionType.INCOME, new BigDecimal("5"), "  Salary ", "   ", TODAY));
+                accountId, TransactionType.INCOME, new BigDecimal("5"), null, "   ", TODAY));
 
         assertThat(saved.getAmount().scale()).isEqualTo(2);
-        assertThat(saved.getCategory()).isEqualTo("Salary");
+        assertThat(saved.getCategory()).isNull();
         assertThat(saved.getDescription()).isNull();
     }
 
@@ -255,8 +259,44 @@ class TransactionServiceTest {
         service.update(userId, transactionId, update("20.00"));
 
         assertThat(account.getCurrentBalance()).isEqualByComparingTo("100.00");
-        assertThat(transaction.getCategory()).isEqualTo("Groceries");
         assertThat(transaction.getDescription()).isEqualTo("Weekly shop");
+    }
+
+    @Test
+    void theChosenCategoryIsAttachedOnCreateAndChangedOrClearedOnUpdate() {
+        UUID foodId = UUID.randomUUID();
+        Category food = new Category(userId, "Food");
+        ReflectionTestUtils.setField(food, "id", foodId);
+        when(categoryService.getOwned(userId, foodId)).thenReturn(food);
+        accountIsLockable();
+        when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Transaction created = service.create(userId, new CreateTransactionRequest(
+                accountId, TransactionType.EXPENSE, new BigDecimal("5.00"), foodId, null, TODAY));
+        assertThat(created.getCategory()).isSameAs(food);
+        assertThat(created.getCategoryId()).isEqualTo(foodId);
+
+        Transaction existing = existing(TransactionType.EXPENSE, "20.00");
+        service.update(userId, transactionId,
+                new UpdateTransactionRequest(new BigDecimal("20.00"), foodId, null, TODAY));
+        assertThat(existing.getCategory()).isSameAs(food);
+
+        service.update(userId, transactionId, new UpdateTransactionRequest(new BigDecimal("20.00"), null, null, TODAY));
+        assertThat(existing.getCategory()).isNull();
+        assertThat(existing.getCategoryId()).isNull();
+    }
+
+    @Test
+    void aCategoryTheCallerDoesNotOwnStopsTheTransactionBeforeAnyMoneyMoves() {
+        UUID foreign = UUID.randomUUID();
+        when(categoryService.getOwned(userId, foreign)).thenThrow(new ResourceNotFoundException("Category not found"));
+
+        assertThatThrownBy(() -> service.create(userId, new CreateTransactionRequest(
+                accountId, TransactionType.EXPENSE, new BigDecimal("5.00"), foreign, null, TODAY)))
+                .isInstanceOf(ResourceNotFoundException.class);
+
+        verify(accountService, never()).getForUpdate(any(), any());
+        verify(transactionRepository, never()).save(any());
     }
 
     @Test

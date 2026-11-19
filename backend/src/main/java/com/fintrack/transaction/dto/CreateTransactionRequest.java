@@ -27,8 +27,7 @@ public record CreateTransactionRequest(
         @Digits(integer = 17, fraction = 2, message = "Amount must have at most 17 digits and 2 decimal places")
         BigDecimal amount,
 
-        @Size(max = 50, message = "Category must be at most 50 characters")
-        String category,
+        UUID categoryId,
 
         @Size(max = 255, message = "Description must be at most 255 characters")
         String description,

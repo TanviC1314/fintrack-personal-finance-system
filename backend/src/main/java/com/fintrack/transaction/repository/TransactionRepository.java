@@ -4,6 +4,10 @@ import com.fintrack.transaction.entity.Transaction;
 import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -13,7 +17,16 @@ import org.springframework.data.repository.query.Param;
 public interface TransactionRepository
         extends JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
 
+    // The category name is shown in every response, so load it with the transaction (the controller runs
+    // outside the transaction, where a lazy association could no longer be read).
+    @EntityGraph(attributePaths = "category")
     Optional<Transaction> findByIdAndAccountUserId(UUID id, UUID userId);
+
+    @Override
+    @EntityGraph(attributePaths = "category")
+    Page<Transaction> findAll(Specification<Transaction> spec, Pageable pageable);
+
+    boolean existsByCategoryId(UUID categoryId);
 
     /**
      * Returns only the account id, without loading the transaction. Callers use it to lock the account

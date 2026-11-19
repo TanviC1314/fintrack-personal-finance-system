@@ -44,7 +44,7 @@ erDiagram
     TRANSACTIONS {
         uuid id PK
         uuid account_id FK
-        uuid category_id FK "nullable, see note below"
+        uuid category_id FK "nullable"
         uuid transfer_id FK "nullable"
         varchar type "INCOME, EXPENSE, TRANSFER_IN, TRANSFER_OUT"
         numeric amount "19,2 always > 0"
@@ -94,14 +94,11 @@ erDiagram
 | `accounts` | 3 | built |
 | `transactions` | 4 | built |
 | `transfers` | 5 | built |
-| `categories`, `budgets` | 6 | planned |
+| `categories` | 6 | built |
+| `budgets` | 6 | planned |
 | `audit_log` | 5 | built |
 
-**Note on transaction categories.** Until the `categories` table exists (Phase 6),
-`transactions.category` is a plain text label of up to 50 characters. When categories are
-added, a migration will create a category row per distinct label for each user and replace the
-text column with the `category_id` foreign key shown above. The transfer link
-(`transfer_id`) was added by the transfers migration, with a CHECK that only transfer legs carry it and a unique index so each transfer has exactly one debit and one credit leg.
+**Note on transaction categories.** Transactions used to carry a free-text label. The category migration created one `categories` row per user for each distinct label (labels differing only in letter case became one category), pointed each transaction at its category through `category_id`, and dropped the text column. A test runs that migration against rows written under the old schema. The transfer link (`transfer_id`) was added by the transfers migration, with a CHECK that only transfer legs carry it and a unique index so each transfer has exactly one debit and one credit leg.
 
 ## Relationships in plain language
 

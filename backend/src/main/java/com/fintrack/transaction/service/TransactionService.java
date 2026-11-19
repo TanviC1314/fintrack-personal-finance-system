@@ -6,6 +6,8 @@ import com.fintrack.account.service.AccountService;
 import com.fintrack.audit.entity.AuditAction;
 import com.fintrack.audit.entity.AuditEntityType;
 import com.fintrack.audit.service.AuditService;
+import com.fintrack.category.entity.Category;
+import com.fintrack.category.service.CategoryService;
 import com.fintrack.common.exception.InvalidRequestException;
 import com.fintrack.common.exception.ResourceNotFoundException;
 import com.fintrack.common.validation.DateRules;
@@ -44,13 +46,15 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final AccountService accountService;
+    private final CategoryService categoryService;
     private final AuditService auditService;
     private final Clock clock;
 
     public TransactionService(TransactionRepository transactionRepository, AccountService accountService,
-                              AuditService auditService, Clock clock) {
+                              CategoryService categoryService, AuditService auditService, Clock clock) {
         this.transactionRepository = transactionRepository;
         this.accountService = accountService;
+        this.categoryService = categoryService;
         this.auditService = auditService;
         this.clock = clock;
     }
@@ -63,13 +67,14 @@ public class TransactionService {
         validateDate(request.transactionDate());
         BigDecimal amount = normalise(request.amount());
 
+        Category category = categoryOrNull(userId, request.categoryId());
         Account account = accountService.getForUpdate(userId, request.accountId());
         requireActive(account);
         applyEffect(account, request.type(), amount);
 
         Transaction saved = transactionRepository.save(new Transaction(
-                account, request.type(), amount,
-                blankToNull(request.category()), blankToNull(request.description()), request.transactionDate()));
+                account, request.type(), amount, category,
+                blankToNull(request.description()), request.transactionDate()));
         auditService.record(userId, AuditEntityType.TRANSACTION, saved.getId(), AuditAction.CREATED, Map.of(
                 "accountId", account.getId().toString(), "type", request.type().name(), "amount", amount));
         return saved;
@@ -90,11 +95,8 @@ public class TransactionService {
         if (filter.from() != null && filter.to() != null && filter.from().isAfter(filter.to())) {
             throw new InvalidRequestException("'from' must not be after 'to'");
         }
-        TransactionFilter cleaned = new TransactionFilter(filter.accountId(), filter.type(),
-                blankToNull(filter.category()), filter.from(), filter.to(), filter.includeReversed());
-
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sortFor(pageable.getSort()));
-        return transactionRepository.findAll(TransactionSpecifications.matching(userId, cleaned), sorted);
+        return transactionRepository.findAll(TransactionSpecifications.matching(userId, filter), sorted);
     }
 
     private static Sort sortFor(Sort requested) {
@@ -125,6 +127,7 @@ public class TransactionService {
     public Transaction update(UUID userId, UUID transactionId, UpdateTransactionRequest request) {
         validateDate(request.transactionDate());
         BigDecimal newAmount = normalise(request.amount());
+        Category category = categoryOrNull(userId, request.categoryId());
 
         Account account = lockAccountOf(userId, transactionId);
         Transaction transaction = transactionRepository.findById(transactionId)
@@ -139,8 +142,7 @@ public class TransactionService {
             boolean credit = transaction.getType().isCredit() == movesMoreInOriginalDirection;
             applyDirection(account, credit, difference.abs());
         }
-        transaction.update(newAmount, blankToNull(request.category()), blankToNull(request.description()),
-                request.transactionDate());
+        transaction.update(newAmount, category, blankToNull(request.description()), request.transactionDate());
         auditService.record(userId, AuditEntityType.TRANSACTION, transactionId, AuditAction.UPDATED,
                 Map.of("previousAmount", previousAmount, "newAmount", newAmount));
         return transaction;
@@ -166,6 +168,11 @@ public class TransactionService {
         auditService.record(userId, AuditEntityType.TRANSACTION, transactionId, AuditAction.REVERSED, Map.of(
                 "accountId", account.getId().toString(), "type", transaction.getType().name(),
                 "amount", transaction.getAmount()));
+    }
+
+    /** The category must belong to the caller; someone else's category is reported as not found. */
+    private Category categoryOrNull(UUID userId, UUID categoryId) {
+        return categoryId == null ? null : categoryService.getOwned(userId, categoryId);
     }
 
     private Account lockAccountOf(UUID userId, UUID transactionId) {

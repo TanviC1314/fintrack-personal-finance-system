@@ -1,9 +1,11 @@
 package com.fintrack.category.service;
 
 import com.fintrack.category.entity.Category;
+import com.fintrack.category.exception.CategoryInUseException;
 import com.fintrack.category.exception.CategoryNameAlreadyExistsException;
 import com.fintrack.category.repository.CategoryRepository;
 import com.fintrack.common.exception.ResourceNotFoundException;
+import com.fintrack.transaction.repository.TransactionRepository;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -14,9 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final TransactionRepository transactionRepository;
 
-    public CategoryService(CategoryRepository categoryRepository) {
+    public CategoryService(CategoryRepository categoryRepository, TransactionRepository transactionRepository) {
         this.categoryRepository = categoryRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Transactional
@@ -62,6 +66,10 @@ public class CategoryService {
     @Transactional
     public void delete(UUID userId, UUID categoryId) {
         Category category = getOwned(userId, categoryId);
+        // Deleting a category that history points at would either orphan or silently re-label that history.
+        if (transactionRepository.existsByCategoryId(categoryId)) {
+            throw new CategoryInUseException();
+        }
         categoryRepository.delete(category);
         categoryRepository.flush();
     }
