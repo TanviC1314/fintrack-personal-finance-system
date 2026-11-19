@@ -8,7 +8,7 @@ at the end of each phase.
 - [x] Configure Spring Boot and Maven
 - [x] Add project package structure
 - [x] Configure PostgreSQL and Docker Compose
-- [ ] Add Flyway database migration setup
+- [x] Add Flyway database migration setup
 
 ## Phase 2 – Database and authentication
 - [ ] User entity and repository
