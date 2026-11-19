@@ -21,8 +21,8 @@ at the end of each phase.
 - [x] Account entity and migration
 - [x] Account repository
 - [x] Account creation service
-- [ ] Account REST endpoints
-- [ ] Account validation and error handling tests
+- [x] Account REST endpoints
+- [x] Account validation and error handling tests
 
 ## Phase 4 – Transactions
 - [ ] Transaction entity and migration
