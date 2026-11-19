@@ -18,7 +18,7 @@ at the end of each phase.
 - [x] Authentication unit and integration tests
 
 ## Phase 3 – Account management
-- [ ] Account entity and migration
+- [x] Account entity and migration
 - [ ] Account repository
 - [ ] Account creation service
 - [ ] Account REST endpoints
