@@ -15,6 +15,7 @@ import com.fintrack.account.exception.AccountArchivedException;
 import com.fintrack.account.exception.AccountNameAlreadyExistsException;
 import com.fintrack.account.exception.AccountNotEmptyException;
 import com.fintrack.account.repository.AccountRepository;
+import com.fintrack.audit.service.AuditService;
 import com.fintrack.common.exception.ResourceNotFoundException;
 import java.math.BigDecimal;
 import java.util.List;
@@ -36,6 +37,8 @@ class AccountServiceTest {
 
     @Mock
     private AccountRepository accountRepository;
+    @Mock
+    private AuditService auditService;
     @InjectMocks
     private AccountService accountService;
 

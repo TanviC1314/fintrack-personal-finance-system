@@ -82,7 +82,7 @@ erDiagram
         uuid user_id FK
         varchar entity_type
         uuid entity_id
-        varchar action
+        varchar action "CREATED, UPDATED, REVERSED, RENAMED, ARCHIVED"
         jsonb details
         timestamptz created_at
     }
@@ -93,9 +93,9 @@ erDiagram
 | `users` | 2 | built |
 | `accounts` | 3 | built |
 | `transactions` | 4 | built |
-| `transfers` | 5 | being built |
+| `transfers` | 5 | built |
 | `categories`, `budgets` | 6 | planned |
-| `audit_log` | alongside the operations it records | planned |
+| `audit_log` | 5 | built |
 
 **Note on transaction categories.** Until the `categories` table exists (Phase 6),
 `transactions.category` is a plain text label of up to 50 characters. When categories are

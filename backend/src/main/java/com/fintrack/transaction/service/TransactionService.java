@@ -3,6 +3,9 @@ package com.fintrack.transaction.service;
 import com.fintrack.account.entity.Account;
 import com.fintrack.account.exception.AccountArchivedException;
 import com.fintrack.account.service.AccountService;
+import com.fintrack.audit.entity.AuditAction;
+import com.fintrack.audit.entity.AuditEntityType;
+import com.fintrack.audit.service.AuditService;
 import com.fintrack.common.exception.InvalidRequestException;
 import com.fintrack.common.exception.ResourceNotFoundException;
 import com.fintrack.common.validation.DateRules;
@@ -20,6 +23,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -40,11 +44,14 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final AccountService accountService;
+    private final AuditService auditService;
     private final Clock clock;
 
-    public TransactionService(TransactionRepository transactionRepository, AccountService accountService, Clock clock) {
+    public TransactionService(TransactionRepository transactionRepository, AccountService accountService,
+                              AuditService auditService, Clock clock) {
         this.transactionRepository = transactionRepository;
         this.accountService = accountService;
+        this.auditService = auditService;
         this.clock = clock;
     }
 
@@ -60,9 +67,12 @@ public class TransactionService {
         requireActive(account);
         applyEffect(account, request.type(), amount);
 
-        return transactionRepository.save(new Transaction(
+        Transaction saved = transactionRepository.save(new Transaction(
                 account, request.type(), amount,
                 blankToNull(request.category()), blankToNull(request.description()), request.transactionDate()));
+        auditService.record(userId, AuditEntityType.TRANSACTION, saved.getId(), AuditAction.CREATED, Map.of(
+                "accountId", account.getId().toString(), "type", request.type().name(), "amount", amount));
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -121,7 +131,8 @@ public class TransactionService {
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction not found"));
         requireChangeable(transaction, account);
 
-        BigDecimal difference = newAmount.subtract(transaction.getAmount());
+        BigDecimal previousAmount = transaction.getAmount();
+        BigDecimal difference = newAmount.subtract(previousAmount);
         if (difference.signum() != 0) {
             // A larger amount moves more money in the transaction's direction; a smaller one gives some back.
             boolean movesMoreInOriginalDirection = difference.signum() > 0;
@@ -130,6 +141,8 @@ public class TransactionService {
         }
         transaction.update(newAmount, blankToNull(request.category()), blankToNull(request.description()),
                 request.transactionDate());
+        auditService.record(userId, AuditEntityType.TRANSACTION, transactionId, AuditAction.UPDATED,
+                Map.of("previousAmount", previousAmount, "newAmount", newAmount));
         return transaction;
     }
 
@@ -150,6 +163,9 @@ public class TransactionService {
 
         applyDirection(account, !transaction.getType().isCredit(), transaction.getAmount());
         transaction.markReversed(clock.instant());
+        auditService.record(userId, AuditEntityType.TRANSACTION, transactionId, AuditAction.REVERSED, Map.of(
+                "accountId", account.getId().toString(), "type", transaction.getType().name(),
+                "amount", transaction.getAmount()));
     }
 
     private Account lockAccountOf(UUID userId, UUID transactionId) {

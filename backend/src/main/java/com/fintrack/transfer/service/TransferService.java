@@ -3,6 +3,9 @@ package com.fintrack.transfer.service;
 import com.fintrack.account.entity.Account;
 import com.fintrack.account.exception.AccountArchivedException;
 import com.fintrack.account.service.AccountService;
+import com.fintrack.audit.entity.AuditAction;
+import com.fintrack.audit.entity.AuditEntityType;
+import com.fintrack.audit.service.AuditService;
 import com.fintrack.common.exception.BusinessRuleException;
 import com.fintrack.common.exception.InvalidRequestException;
 import com.fintrack.common.validation.DateRules;
@@ -48,13 +51,15 @@ public class TransferService {
     private final TransferRepository transferRepository;
     private final TransactionRepository transactionRepository;
     private final AccountService accountService;
+    private final AuditService auditService;
     private final Clock clock;
 
     public TransferService(TransferRepository transferRepository, TransactionRepository transactionRepository,
-                           AccountService accountService, Clock clock) {
+                           AccountService accountService, AuditService auditService, Clock clock) {
         this.transferRepository = transferRepository;
         this.transactionRepository = transactionRepository;
         this.accountService = accountService;
+        this.auditService = auditService;
         this.clock = clock;
     }
 
@@ -106,6 +111,9 @@ public class TransferService {
                 legDescription(description, "Transfer to " + destination.getName()), date, transfer.getId()));
         transactionRepository.save(Transaction.transferLeg(destination, TransactionType.TRANSFER_IN, amount,
                 legDescription(description, "Transfer from " + source.getName()), date, transfer.getId()));
+        auditService.record(userId, AuditEntityType.TRANSFER, transfer.getId(), AuditAction.CREATED, Map.of(
+                "sourceAccountId", sourceId.toString(), "destinationAccountId", destinationId.toString(),
+                "amount", amount));
         return new TransferResult(transfer, false);
     }
 

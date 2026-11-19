@@ -14,6 +14,7 @@ import com.fintrack.account.entity.AccountType;
 import com.fintrack.account.exception.AccountArchivedException;
 import com.fintrack.account.exception.InsufficientFundsException;
 import com.fintrack.account.service.AccountService;
+import com.fintrack.audit.service.AuditService;
 import com.fintrack.common.exception.BusinessRuleException;
 import com.fintrack.common.exception.InvalidRequestException;
 import com.fintrack.common.exception.ResourceNotFoundException;
@@ -63,6 +64,8 @@ class TransferServiceTest {
     private TransactionRepository transactionRepository;
     @Mock
     private AccountService accountService;
+    @Mock
+    private AuditService auditService;
 
     private TransferService service;
     private Account lowAccount;
@@ -70,7 +73,7 @@ class TransferServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new TransferService(transferRepository, transactionRepository, accountService,
+        service = new TransferService(transferRepository, transactionRepository, accountService, auditService,
                 Clock.fixed(NOW, ZoneOffset.UTC));
         lowAccount = account("Low", "EUR", "100.00", low);
         highAccount = account("High", "EUR", "20.00", high);

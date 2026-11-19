@@ -12,6 +12,7 @@ import com.fintrack.account.entity.AccountType;
 import com.fintrack.account.exception.AccountArchivedException;
 import com.fintrack.account.exception.InsufficientFundsException;
 import com.fintrack.account.service.AccountService;
+import com.fintrack.audit.service.AuditService;
 import com.fintrack.common.exception.InvalidRequestException;
 import com.fintrack.common.exception.ResourceNotFoundException;
 import com.fintrack.transaction.dto.CreateTransactionRequest;
@@ -49,13 +50,16 @@ class TransactionServiceTest {
     private TransactionRepository transactionRepository;
     @Mock
     private AccountService accountService;
+    @Mock
+    private AuditService auditService;
 
     private TransactionService service;
     private Account account;
 
     @BeforeEach
     void setUp() {
-        service = new TransactionService(transactionRepository, accountService, Clock.fixed(NOW, ZoneOffset.UTC));
+        service = new TransactionService(transactionRepository, accountService, auditService,
+                Clock.fixed(NOW, ZoneOffset.UTC));
         account = new Account(userId, "Main", AccountType.CURRENT, "EUR", new BigDecimal("100.00"));
         ReflectionTestUtils.setField(account, "id", accountId);
     }
