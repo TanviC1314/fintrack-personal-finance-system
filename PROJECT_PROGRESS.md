@@ -47,7 +47,7 @@ at the end of each phase.
 ## Phase 7 – Frontend
 - [x] React + TypeScript setup
 - [x] Authentication pages
-- [ ] Dashboard layout
+- [x] Dashboard layout
 - [ ] Account screens
 - [ ] Transaction screens
 - [ ] Transfer and budget screens

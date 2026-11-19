@@ -10,3 +10,55 @@ export interface TokenResponse {
   tokenType: string
   expiresIn: number
 }
+
+export type AccountType = 'CURRENT' | 'SAVINGS' | 'CASH'
+export type AccountStatus = 'ACTIVE' | 'ARCHIVED'
+
+export interface Account {
+  id: string
+  name: string
+  type: AccountType
+  currency: string
+  openingBalance: number
+  currentBalance: number
+  status: AccountStatus
+  createdAt: string
+}
+
+export type TransactionType = 'INCOME' | 'EXPENSE' | 'TRANSFER_IN' | 'TRANSFER_OUT'
+
+export interface Transaction {
+  id: string
+  accountId: string
+  type: TransactionType
+  amount: number
+  categoryId: string | null
+  categoryName: string | null
+  description: string | null
+  transactionDate: string
+  reversedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface DashboardSummary {
+  currency: string | null
+  month: string
+  totalBalance: number
+  monthlyIncome: number
+  monthlyExpenses: number
+  monthlySavings: number
+  recentTransactions: Transaction[]
+}
+
+export interface MonthlyTrend {
+  currency: string | null
+  months: { month: string; income: number; expenses: number; savings: number }[]
+}
+
+export interface CategorySpendingReport {
+  currency: string | null
+  month: string
+  totalSpent: number
+  categories: { categoryId: string | null; categoryName: string; amount: number; percentage: number }[]
+}

@@ -1,8 +1,13 @@
+import { lazy } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { ProtectedRoute, PublicOnlyRoute } from './auth/RouteGuards'
+import AppLayout from './components/layout/AppLayout'
 import LoginPage from './features/auth/LoginPage'
 import RegisterPage from './features/auth/RegisterPage'
-import HomePage from './pages/HomePage'
+import NotFoundPage from './pages/NotFoundPage'
+
+// Pages load on demand so the charting library is not part of the login screen's download.
+const DashboardPage = lazy(() => import('./features/dashboard/DashboardPage'))
 
 export default function App() {
   return (
@@ -12,7 +17,10 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
       </Route>
       <Route element={<ProtectedRoute />}>
-        <Route path="/" element={<HomePage />} />
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
       </Route>
     </Routes>
   )
