@@ -6,7 +6,7 @@ at the end of each phase.
 ## Phase 1 – Project foundation
 - [x] Initialize repository and add README
 - [x] Configure Spring Boot and Maven
-- [ ] Add project package structure
+- [x] Add project package structure
 - [ ] Configure PostgreSQL and Docker Compose
 - [ ] Add Flyway database migration setup
 
