@@ -13,7 +13,7 @@ at the end of each phase.
 ## Phase 2 – Database and authentication
 - [x] User entity and repository
 - [x] Registration DTOs and validation
-- [ ] User registration service
+- [x] User registration service
 - [ ] Authentication and JWT security
 - [ ] Authentication unit and integration tests
 
