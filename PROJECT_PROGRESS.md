@@ -39,7 +39,7 @@ at the end of each phase.
 - [x] Rollback and concurrency tests
 
 ## Phase 6 – Dashboard and budgets
-- [ ] Dashboard aggregation queries
+- [x] Dashboard aggregation queries
 - [ ] Financial summary endpoints
 - [ ] Categories and budget management (categories done)
 - [ ] Budget validation and tests

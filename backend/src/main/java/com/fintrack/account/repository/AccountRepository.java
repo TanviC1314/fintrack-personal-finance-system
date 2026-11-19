@@ -3,6 +3,7 @@ package com.fintrack.account.repository;
 import com.fintrack.account.entity.Account;
 import com.fintrack.account.entity.AccountStatus;
 import jakarta.persistence.LockModeType;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,6 +28,16 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     List<Account> findAllByUserIdOrderByCreatedAtAsc(UUID userId);
 
     List<Account> findAllByUserIdAndStatusOrderByCreatedAtAsc(UUID userId, AccountStatus status);
+
+    /** Total of the caller's active accounts in one currency; zero when there are none. */
+    @Query("""
+            select coalesce(sum(a.currentBalance), 0) from Account a
+            where a.userId = :userId and a.currency = :currency
+              and a.status = com.fintrack.account.entity.AccountStatus.ACTIVE
+            """)
+    BigDecimal sumActiveBalance(@Param("userId") UUID userId, @Param("currency") String currency);
+
+    Optional<Account> findFirstByUserIdAndStatusOrderByCreatedAtAsc(UUID userId, AccountStatus status);
 
     boolean existsByUserIdAndNameIgnoreCaseAndStatus(UUID userId, String name, AccountStatus status);
 }
