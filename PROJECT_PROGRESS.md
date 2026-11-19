@@ -27,7 +27,7 @@ at the end of each phase.
 ## Phase 4 – Transactions
 - [x] Transaction entity and migration
 - [x] Income and expense services
-- [ ] Transaction REST endpoints
+- [x] Transaction REST endpoints
 - [ ] Filtering and pagination
 - [ ] Transaction unit and integration tests
 
