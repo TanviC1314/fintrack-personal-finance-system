@@ -42,7 +42,7 @@ at the end of each phase.
 - [x] Dashboard aggregation queries
 - [x] Financial summary endpoints
 - [x] Categories and budget management
-- [ ] Budget validation and tests
+- [x] Budget validation and tests
 
 ## Phase 7 – Frontend
 - [ ] React + TypeScript setup
