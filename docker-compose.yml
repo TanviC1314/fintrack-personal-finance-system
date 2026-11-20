@@ -20,5 +20,37 @@ services:
       retries: 10
       start_period: 10s
 
+  backend:
+    build: ./backend
+    image: fintrack-backend
+    container_name: fintrack-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Inside the Compose network the database is reachable by its service name.
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-fintrack}
+      DB_USERNAME: ${POSTGRES_USER:-fintrack}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}
+      # No default on purpose: a signing secret must never be a value from a public repository.
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (see .env.example)}
+    ports:
+      # Published to localhost only, for Swagger UI and API clients such as Postman.
+      - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
+    # The health check is defined in backend/Dockerfile (/actuator/health).
+
+  frontend:
+    build: ./frontend
+    image: fintrack-frontend
+    container_name: fintrack-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:8080"
+    # The health check is defined in frontend/Dockerfile.
+
 volumes:
   postgres-data:
