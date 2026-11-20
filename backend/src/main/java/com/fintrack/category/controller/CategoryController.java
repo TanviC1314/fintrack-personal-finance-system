@@ -5,6 +5,8 @@ import com.fintrack.category.dto.CategoryResponse;
 import com.fintrack.category.entity.Category;
 import com.fintrack.category.service.CategoryService;
 import com.fintrack.security.AuthenticatedUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Categories", description = "Spending categories used by transactions and budgets.")
 @RestController
 @RequestMapping("/api/v1/categories")
 public class CategoryController {
@@ -30,6 +33,7 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
+    @Operation(summary = "Create a category")
     @PostMapping
     public ResponseEntity<CategoryResponse> create(
             @AuthenticationPrincipal AuthenticatedUser caller, @Valid @RequestBody CategoryRequest request) {
@@ -38,11 +42,13 @@ public class CategoryController {
                 .body(CategoryResponse.from(category));
     }
 
+    @Operation(summary = "List your categories")
     @GetMapping
     public List<CategoryResponse> list(@AuthenticationPrincipal AuthenticatedUser caller) {
         return categoryService.list(caller.id()).stream().map(CategoryResponse::from).toList();
     }
 
+    @Operation(summary = "Rename a category")
     @PutMapping("/{id}")
     public CategoryResponse rename(
             @AuthenticationPrincipal AuthenticatedUser caller,
@@ -51,6 +57,7 @@ public class CategoryController {
         return CategoryResponse.from(categoryService.rename(caller.id(), id, request.name()));
     }
 
+    @Operation(summary = "Delete a category that nothing uses")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal AuthenticatedUser caller, @PathVariable UUID id) {
         categoryService.delete(caller.id(), id);

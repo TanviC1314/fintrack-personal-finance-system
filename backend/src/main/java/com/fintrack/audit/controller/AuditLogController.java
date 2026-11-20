@@ -5,6 +5,8 @@ import com.fintrack.audit.entity.AuditEntityType;
 import com.fintrack.audit.service.AuditService;
 import com.fintrack.common.dto.PageResponse;
 import com.fintrack.security.AuthenticatedUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Audit log", description = "An append-only record of changes to your accounts and money.")
 @RestController
 @RequestMapping("/api/v1/audit-logs")
 public class AuditLogController {
@@ -24,6 +27,7 @@ public class AuditLogController {
     }
 
     /** The caller's own audit history, newest first. Read-only: the log is written by the operations themselves. */
+    @Operation(summary = "List your audit entries, newest first")
     @GetMapping
     public PageResponse<AuditLogResponse> list(
             @AuthenticationPrincipal AuthenticatedUser caller,

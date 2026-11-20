@@ -9,6 +9,8 @@ import com.fintrack.transaction.dto.UpdateTransactionRequest;
 import com.fintrack.transaction.entity.Transaction;
 import com.fintrack.transaction.entity.TransactionType;
 import com.fintrack.transaction.service.TransactionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.time.LocalDate;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Transactions", description = "Income and expenses. Deleting reverses a transaction and keeps it in the history.")
 @RestController
 @RequestMapping("/api/v1/transactions")
 public class TransactionController {
@@ -37,6 +40,7 @@ public class TransactionController {
         this.transactionService = transactionService;
     }
 
+    @Operation(summary = "Record an income or an expense")
     @PostMapping
     public ResponseEntity<TransactionResponse> create(
             @AuthenticationPrincipal AuthenticatedUser caller, @Valid @RequestBody CreateTransactionRequest request) {
@@ -50,6 +54,7 @@ public class TransactionController {
      * from/to (inclusive dates, ISO format) and includeReversed. Paging: page (from 0), size (max 100)
      * and sort, e.g. sort=amount,desc. Default order is newest transaction date first.
      */
+    @Operation(summary = "Search transactions with filters, sorting and paging")
     @GetMapping
     public PageResponse<TransactionResponse> list(
             @AuthenticationPrincipal AuthenticatedUser caller,
@@ -65,11 +70,13 @@ public class TransactionController {
                 .map(TransactionResponse::from));
     }
 
+    @Operation(summary = "Get one transaction")
     @GetMapping("/{id}")
     public TransactionResponse get(@AuthenticationPrincipal AuthenticatedUser caller, @PathVariable UUID id) {
         return TransactionResponse.from(transactionService.get(caller.id(), id));
     }
 
+    @Operation(summary = "Change the amount, date, category or description of a transaction")
     @PutMapping("/{id}")
     public TransactionResponse update(
             @AuthenticationPrincipal AuthenticatedUser caller,
@@ -79,6 +86,7 @@ public class TransactionController {
     }
 
     /** Reverses the transaction. The row is kept (marked reversed) so the history stays auditable. */
+    @Operation(summary = "Reverse a transaction (the opposite balance change is applied)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> reverse(@AuthenticationPrincipal AuthenticatedUser caller, @PathVariable UUID id) {
         transactionService.reverse(caller.id(), id);

@@ -5,6 +5,8 @@ import com.fintrack.budget.dto.CreateBudgetRequest;
 import com.fintrack.budget.dto.UpdateBudgetRequest;
 import com.fintrack.budget.service.BudgetService;
 import com.fintrack.security.AuthenticatedUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.time.YearMonth;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Budgets", description = "Monthly spending limits per category and currency.")
 @RestController
 @RequestMapping("/api/v1/budgets")
 public class BudgetController {
@@ -32,6 +35,7 @@ public class BudgetController {
         this.budgetService = budgetService;
     }
 
+    @Operation(summary = "Create a budget for a category and month")
     @PostMapping
     public ResponseEntity<BudgetResponse> create(
             @AuthenticationPrincipal AuthenticatedUser caller, @Valid @RequestBody CreateBudgetRequest request) {
@@ -43,6 +47,7 @@ public class BudgetController {
      * Budgets for one month (yyyy-MM, default current) with how much of each has been spent. Use
      * exceededOnly=true to list just the budgets that have been overspent.
      */
+    @Operation(summary = "List the budgets of a month with how much has been spent")
     @GetMapping
     public List<BudgetResponse> list(
             @AuthenticationPrincipal AuthenticatedUser caller,
@@ -52,6 +57,7 @@ public class BudgetController {
         return budgetService.list(caller.id(), month, currency, exceededOnly);
     }
 
+    @Operation(summary = "Change a budget's amount")
     @PutMapping("/{id}")
     public BudgetResponse update(
             @AuthenticationPrincipal AuthenticatedUser caller,

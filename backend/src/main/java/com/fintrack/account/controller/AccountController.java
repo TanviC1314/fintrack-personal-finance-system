@@ -6,6 +6,8 @@ import com.fintrack.account.dto.UpdateAccountRequest;
 import com.fintrack.account.entity.Account;
 import com.fintrack.account.service.AccountService;
 import com.fintrack.security.AuthenticatedUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Accounts", description = "Current, savings and cash accounts.")
 @RestController
 @RequestMapping("/api/v1/accounts")
 public class AccountController {
@@ -32,6 +35,7 @@ public class AccountController {
         this.accountService = accountService;
     }
 
+    @Operation(summary = "Create an account")
     @PostMapping
     public ResponseEntity<AccountResponse> create(
             @AuthenticationPrincipal AuthenticatedUser caller, @Valid @RequestBody CreateAccountRequest request) {
@@ -40,6 +44,7 @@ public class AccountController {
                 .body(AccountResponse.from(account));
     }
 
+    @Operation(summary = "List your accounts")
     @GetMapping
     public List<AccountResponse> list(
             @AuthenticationPrincipal AuthenticatedUser caller,
@@ -47,11 +52,13 @@ public class AccountController {
         return accountService.list(caller.id(), includeArchived).stream().map(AccountResponse::from).toList();
     }
 
+    @Operation(summary = "Get one account")
     @GetMapping("/{id}")
     public AccountResponse get(@AuthenticationPrincipal AuthenticatedUser caller, @PathVariable UUID id) {
         return AccountResponse.from(accountService.get(caller.id(), id));
     }
 
+    @Operation(summary = "Rename an account")
     @PutMapping("/{id}")
     public AccountResponse rename(
             @AuthenticationPrincipal AuthenticatedUser caller,
@@ -61,6 +68,7 @@ public class AccountController {
     }
 
     /** Archives the account; accounts are never physically deleted so their history is preserved. */
+    @Operation(summary = "Archive an account (its balance must be zero)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> archive(@AuthenticationPrincipal AuthenticatedUser caller, @PathVariable UUID id) {
         accountService.archive(caller.id(), id);
