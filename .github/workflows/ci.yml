@@ -1,0 +1,131 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# The pipeline only reads the repository.
+permissions:
+  contents: read
+
+# A newer push to the same branch makes an older, still-running pipeline pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (build, unit tests, integration tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21 and Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build
+        run: ./mvnw -B -DskipTests package
+
+      - name: Unit tests
+        run: ./mvnw -B test
+
+      # Integration tests start PostgreSQL containers with Testcontainers; the runner provides Docker.
+      # `verify` also produces the JaCoCo coverage report.
+      - name: Integration tests and coverage
+        run: ./mvnw -B verify
+
+      - name: Summarise test results
+        if: always()
+        working-directory: .
+        run: python3 .github/scripts/test-summary.py "Backend unit tests=backend/target/surefire-reports" "Backend integration tests=backend/target/failsafe-reports" --coverage backend/target/site/jacoco/jacoco.csv
+
+      - name: Upload test and coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-reports
+          path: |
+            backend/target/surefire-reports
+            backend/target/failsafe-reports
+            backend/target/site/jacoco
+          retention-days: 14
+
+  frontend:
+    name: Frontend (lint, tests, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test -- --reporter=default --reporter=junit --outputFile.junit=test-results/junit.xml
+
+      - name: Build
+        run: npm run build
+
+      - name: Summarise test results
+        if: always()
+        working-directory: .
+        run: python3 .github/scripts/test-summary.py "Frontend tests=frontend/test-results"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-reports
+          path: frontend/test-results
+          retention-days: 14
+
+  docker:
+    name: Docker images and full-stack smoke test
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    timeout-minutes: 20
+    env:
+      # Throwaway values that exist only for this job on a disposable runner. They are not secrets.
+      POSTGRES_PASSWORD: ci-throwaway-database-password
+      JWT_SECRET: ci-throwaway-signing-secret-at-least-32-chars
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Build images and start the stack
+        run: docker compose up -d --build --wait
+
+      - name: Smoke test through the web server
+        run: bash .github/scripts/smoke-test.sh http://localhost:3000
+
+      - name: Show container logs if something failed
+        if: failure()
+        run: docker compose logs --tail=200
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down -v
