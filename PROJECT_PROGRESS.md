@@ -1,7 +1,8 @@
 # Project Progress
 
 Ticked items are committed, compile and pass their relevant checks. Work pauses for review
-at the end of each phase.
+at the end of each phase. All eight phases are complete; the CI pipeline is validated with
+actionlint but has not run on GitHub yet because the repository has not been pushed.
 
 ## Phase 1 – Project foundation
 - [x] Initialize repository and add README
@@ -51,11 +52,11 @@ at the end of each phase.
 - [x] Account screens
 - [x] Transaction screens
 - [x] Transfer and budget screens
-- [ ] API integration
+- [x] API integration (every page runs against the real API; the profile page was added)
 
 ## Phase 8 – Quality and delivery
-- [ ] Dockerfiles
-- [ ] GitHub Actions CI
-- [ ] API documentation and Postman collection
-- [ ] Architecture diagrams and screenshots
-- [ ] Final README and setup documentation
+- [x] Dockerfiles
+- [x] GitHub Actions CI
+- [x] API documentation and Postman collection
+- [x] Architecture diagrams and screenshots
+- [x] Final README and setup documentation
