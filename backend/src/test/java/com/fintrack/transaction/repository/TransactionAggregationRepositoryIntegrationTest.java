@@ -44,7 +44,7 @@ import org.springframework.data.domain.PageRequest;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(PostgresTestContainerConfig.class)
-class TransactionAggregationRepositoryTest {
+class TransactionAggregationRepositoryIntegrationTest {
 
     @Autowired
     private TransactionRepository transactionRepository;

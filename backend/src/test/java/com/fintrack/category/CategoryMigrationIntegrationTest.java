@@ -18,7 +18,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
  * Runs the data migration that replaces free-text transaction labels with category rows, against data
  * created under the old schema. A fresh database would prove nothing about existing rows.
  */
-class CategoryMigrationTest {
+class CategoryMigrationIntegrationTest {
 
     private static Flyway flywayUpTo(PostgreSQLContainer<?> db, String target) {
         return Flyway.configure()

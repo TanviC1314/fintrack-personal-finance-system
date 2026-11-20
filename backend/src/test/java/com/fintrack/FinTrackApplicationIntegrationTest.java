@@ -15,7 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(PostgresTestContainerConfig.class)
-class FinTrackApplicationTests {
+class FinTrackApplicationIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
