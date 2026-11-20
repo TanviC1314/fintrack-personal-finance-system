@@ -1,6 +1,6 @@
 # FinTrack – Personal Finance and Transaction Management System
 
-[![CI](https://github.com/OWNER/fintrack-personal-finance-system/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/fintrack-personal-finance-system/actions/workflows/ci.yml)
+[![CI](https://github.com/TanviC1314/fintrack-personal-finance-system/actions/workflows/ci.yml/badge.svg)](https://github.com/TanviC1314/fintrack-personal-finance-system/actions/workflows/ci.yml)
 
 > A portfolio project that uses **simulated data only**. It is not connected to any bank, does not
 > process real payments and stores no card details. It has not been security audited and is **not
@@ -188,7 +188,7 @@ good they are, so the tests that matter most are the behavioural ones:
 build and unit tests, integration tests with coverage, frontend lint, tests and build, then the Docker images are
 built, the full stack is started and the smoke test runs through nginx. Any failing build or test fails the pipeline.
 Results are shown in the job summary and the reports are uploaded as artifacts. The workflow passes `actionlint`;
-replace `OWNER` in the badge above after the repository is pushed.
+the badge above points at the GitHub repository.
 
 ## Project structure
 
