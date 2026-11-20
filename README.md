@@ -170,8 +170,8 @@ npm run dev        # http://localhost:5173
 | Full-stack smoke test | `bash .github/scripts/smoke-test.sh http://localhost:3000` | Needs the stack running |
 
 On the last full run: **146 backend unit tests, 255 backend integration tests and 87 frontend tests passed**,
-and JaCoCo reported **98.3 % instruction coverage** of the backend (unit and integration tests together; the report
-is in `backend/target/site/jacoco/index.html`). Coverage is a measure of what the tests execute, not of how
+and JaCoCo reported **about 98 % instruction coverage** of the backend (98.2–98.3 % across runs; unit and integration
+tests together; the report is in `backend/target/site/jacoco/index.html`). Coverage is a measure of what the tests execute, not of how
 good they are, so the tests that matter most are the behavioural ones:
 
 - **Concurrency:** eight simultaneous 30.00 expenses on a 100.00 account let exactly three succeed; opposite
