@@ -35,3 +35,8 @@ export function shiftMonth(month: string, delta: number): string {
   const shifted = new Date(year, number - 1 + delta, 1)
   return currentMonth(shifted)
 }
+
+/** "transaction" becomes "transactions" and "entry" becomes "entries". */
+export function plural(noun: string): string {
+  return /[^aeiou]y$/.test(noun) ? `${noun.slice(0, -1)}ies` : `${noun}s`
+}

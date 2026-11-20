@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { currentMonth, formatDate, formatMoney, formatMonth, formatMonthShort, shiftMonth } from './format'
+import { currentMonth, formatDate, formatMoney, formatMonth, formatMonthShort, plural, shiftMonth } from './format'
 
 describe('formatMoney', () => {
   it('shows two decimals and the currency symbol', () => {
@@ -39,5 +39,16 @@ describe('dates', () => {
     expect(shiftMonth('2025-12', 1)).toBe('2026-01')
     expect(shiftMonth('2025-03', 0)).toBe('2025-03')
     expect(shiftMonth('2025-03', -15)).toBe('2023-12')
+  })
+})
+
+describe('plural', () => {
+  it.each([
+    ['transaction', 'transactions'],
+    ['transfer', 'transfers'],
+    ['entry', 'entries'],
+    ['day', 'days'], // a vowel before the y keeps a plain s
+  ])('%s becomes %s', (noun, expected) => {
+    expect(plural(noun)).toBe(expected)
   })
 })

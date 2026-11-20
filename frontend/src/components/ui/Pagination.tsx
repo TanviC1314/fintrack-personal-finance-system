@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { plural } from '../../lib/format'
 import { Button } from './Button'
 
 interface Props {
@@ -15,8 +16,7 @@ export function Pagination({ page, totalPages, totalElements, noun, onPageChange
   return (
     <nav aria-label="Pagination" className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-3 text-sm text-slate-600">
       <p>
-        Page {page + 1} of {Math.max(totalPages, 1)} · {totalElements} {noun}
-        {totalElements === 1 ? '' : 's'}
+        Page {page + 1} of {Math.max(totalPages, 1)} · {totalElements} {totalElements === 1 ? noun : plural(noun)}
       </p>
       <div className="flex gap-2">
         <Button variant="secondary" aria-label="Previous page" disabled={page <= 0} onClick={() => onPageChange(page - 1)}>
