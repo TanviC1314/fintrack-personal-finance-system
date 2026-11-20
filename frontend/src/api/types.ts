@@ -103,3 +103,12 @@ export interface Budget {
   utilisationPercent: number
   exceeded: boolean
 }
+
+export interface AuditEntry {
+  id: string
+  entityType: 'ACCOUNT' | 'TRANSACTION' | 'TRANSFER'
+  entityId: string
+  action: 'CREATED' | 'UPDATED' | 'REVERSED' | 'RENAMED' | 'ARCHIVED'
+  details: Record<string, unknown>
+  createdAt: string
+}
