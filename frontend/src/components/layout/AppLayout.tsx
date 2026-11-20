@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Landmark, LayoutDashboard, LineChart, LogOut, Menu, PiggyBank, Send, X, type LucideIcon } from 'lucide-react'
+import { ArrowLeftRight, Landmark, LayoutDashboard, LineChart, LogOut, Menu, PiggyBank, Send, UserRound, X, type LucideIcon } from 'lucide-react'
 import { Suspense, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { to: '/transfers', label: 'Transfers', icon: Send },
   { to: '/budgets', label: 'Budgets', icon: PiggyBank },
+  { to: '/profile', label: 'Profile', icon: UserRound },
 ]
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
