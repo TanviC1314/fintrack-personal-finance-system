@@ -51,7 +51,7 @@ public class TransactionController {
 
     /**
      * Lists the caller's transactions. Optional filters: accountId, type, categoryId,
-     * from/to (inclusive dates, ISO format) and includeReversed. Paging: page (from 0), size (max 100)
+     * from/to (inclusive dates, ISO format), includeReversed and q (text in the description). Paging: page (from 0), size (max 100)
      * and sort, e.g. sort=amount,desc. Default order is newest transaction date first.
      */
     @Operation(summary = "Search transactions with filters, sorting and paging")
@@ -64,8 +64,9 @@ public class TransactionController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(defaultValue = "false") boolean includeReversed,
+            @RequestParam(name = "q", required = false) String q,
             Pageable pageable) {
-        TransactionFilter filter = new TransactionFilter(accountId, type, categoryId, from, to, includeReversed);
+        TransactionFilter filter = new TransactionFilter(accountId, type, categoryId, from, to, includeReversed, q);
         return PageResponse.from(transactionService.search(caller.id(), filter, pageable)
                 .map(TransactionResponse::from));
     }

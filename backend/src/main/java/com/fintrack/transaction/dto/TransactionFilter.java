@@ -11,6 +11,7 @@ import java.util.UUID;
  * @param from           earliest transaction date, inclusive
  * @param to             latest transaction date, inclusive
  * @param includeReversed reversed transactions are hidden unless this is true
+ * @param text            case-insensitive text the description must contain; blank means no text filter
  */
 public record TransactionFilter(
         UUID accountId,
@@ -18,5 +19,6 @@ public record TransactionFilter(
         UUID categoryId,
         LocalDate from,
         LocalDate to,
-        boolean includeReversed) {
+        boolean includeReversed,
+        String text) {
 }
