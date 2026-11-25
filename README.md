@@ -104,7 +104,7 @@ Errors use RFC 9457 problem details. Another user's resource returns `404`, neve
 | --- | --- |
 | Authentication | `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/users/me` |
 | Accounts | `POST`, `GET /api/v1/accounts`; `GET`, `PUT`, `DELETE` (archive) `/api/v1/accounts/{id}` |
-| Transactions | `POST`, `GET /api/v1/transactions` (filter, sort, page); `GET`, `PUT`, `DELETE` (reverse) `/api/v1/transactions/{id}` |
+| Transactions | `POST`, `GET /api/v1/transactions` (filter incl. `q` text search, sort, page); `GET`, `PUT`, `DELETE` (reverse) `/api/v1/transactions/{id}` |
 | Transfers | `POST /api/v1/transfers` (requires `Idempotency-Key`), `GET /api/v1/transfers` |
 | Categories | `POST`, `GET /api/v1/categories`; `PUT`, `DELETE /api/v1/categories/{id}` |
 | Budgets | `POST`, `GET /api/v1/budgets`; `PUT /api/v1/budgets/{id}` |

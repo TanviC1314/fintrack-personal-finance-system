@@ -60,3 +60,8 @@ actionlint but has not run on GitHub yet because the repository has not been pus
 - [x] API documentation and Postman collection
 - [x] Architecture diagrams and screenshots
 - [x] Final README and setup documentation
+
+## Daily improvements
+Small follow-up features, one or two commits each.
+
+- [x] 2026-11-25 Search transactions by description (API parameter `q` and a search box on the transactions page)
