@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { Account, Category } from '../../api/types'
 import { Button } from '../../components/ui/Button'
 
@@ -8,6 +9,7 @@ export interface FilterValues {
   from: string
   to: string
   includeReversed: boolean
+  q: string
 }
 
 const selectClasses =
@@ -28,12 +30,37 @@ export function TransactionFilters({
   onClear: () => void
   isFiltered: boolean
 }) {
+  // The box keeps its own text so typing is instant; the URL (and so the API call) follows after a pause.
+  const [text, setText] = useState(values.q)
+  const [seenQ, setSeenQ] = useState(values.q)
+  if (seenQ !== values.q) {
+    // The URL changed from elsewhere (for example Clear filters): show what it now says.
+    setSeenQ(values.q)
+    setText(values.q)
+  }
+  useEffect(() => {
+    if (text === values.q) return
+    const timer = setTimeout(() => onChange({ q: text }), 300)
+    return () => clearTimeout(timer)
+  }, [text, values.q, onChange])
+
   return (
     <form
       onSubmit={(e) => e.preventDefault()}
       aria-label="Filter transactions"
       className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6"
     >
+      <label className="text-xs font-medium text-slate-600 sm:col-span-2 md:col-span-3 xl:col-span-6">
+        Search description
+        <input
+          type="search"
+          maxLength={100}
+          placeholder="e.g. coffee"
+          className={`${selectClasses} mt-1`}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+      </label>
       <label className="text-xs font-medium text-slate-600">
         Account
         <select className={`${selectClasses} mt-1`} value={values.accountId} onChange={(e) => onChange({ accountId: e.target.value })}>

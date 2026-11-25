@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -94,6 +94,33 @@ describe('TransactionsPage', () => {
     const last = new URL(listCalls().at(-1)!, 'http://localhost')
     expect(last.searchParams.get('type')).toBe('INCOME')
     expect(last.searchParams.get('page')).toBe('0')
+  })
+
+  it('searches the description after a short pause and sends it as q', async () => {
+    renderPage()
+    await screen.findByText('Lunch')
+
+    await userEvent.type(screen.getByLabelText('Search description'), 'coffee')
+
+    await screen.findByRole('button', { name: 'Clear filters' })
+    const last = new URL(listCalls().at(-1)!, 'http://localhost')
+    expect(last.searchParams.get('q')).toBe('coffee')
+    expect(last.searchParams.get('page')).toBe('0')
+    // typing six letters must not fire six requests
+    expect(listCalls().filter((u) => u.includes('q='))).toHaveLength(1)
+  })
+
+  it('reads the search text from the address bar and clears it with Clear filters', async () => {
+    renderPage('/transactions?q=lunch')
+    await screen.findByText('Lunch')
+
+    expect(screen.getByLabelText('Search description')).toHaveValue('lunch')
+    expect(new URL(listCalls()[0], 'http://localhost').searchParams.get('q')).toBe('lunch')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+
+    await waitFor(() => expect(screen.getByLabelText('Search description')).toHaveValue(''))
+    expect(new URL(listCalls().at(-1)!, 'http://localhost').searchParams.get('q')).toBeNull()
   })
 
   it('reports totals and lets the user move between pages', async () => {

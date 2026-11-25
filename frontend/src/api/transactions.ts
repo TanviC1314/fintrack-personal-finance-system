@@ -8,6 +8,7 @@ export interface TransactionFilters {
   from?: string
   to?: string
   includeReversed?: boolean
+  q?: string
   page?: number
   size?: number
   sort?: string

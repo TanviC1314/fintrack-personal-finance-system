@@ -33,6 +33,7 @@ function readParams(params: URLSearchParams) {
     from: params.get('from') ?? '',
     to: params.get('to') ?? '',
     includeReversed: params.get('includeReversed') === 'true',
+    q: params.get('q') ?? '',
   }
   const page = Math.max(0, Number(params.get('page') ?? 0) || 0)
   const sort = params.get('sort') ?? DEFAULT_SORT
@@ -47,6 +48,7 @@ function toApiFilters(filters: FilterValues, page: number, sort: string): Transa
     from: filters.from || undefined,
     to: filters.to || undefined,
     includeReversed: filters.includeReversed || undefined,
+    q: filters.q.trim() || undefined,
     page,
     size: PAGE_SIZE,
     sort,
@@ -113,6 +115,7 @@ export default function TransactionsPage() {
     if (merged.from) next.set('from', merged.from)
     if (merged.to) next.set('to', merged.to)
     if (merged.includeReversed) next.set('includeReversed', 'true')
+    if (merged.q) next.set('q', merged.q)
     if (nextSort !== DEFAULT_SORT) next.set('sort', nextSort)
     setParams(next) // changing a filter or the sort starts again from the first page
   }
@@ -165,7 +168,7 @@ export default function TransactionsPage() {
             <ErrorState error={transactions.error} onRetry={() => transactions.refetch()} />
           ) : data && data.totalElements === 0 ? (
             isFiltered ? (
-              <EmptyState title="No transactions match these filters" message="Try widening the dates or clearing a filter." action={<Button variant="secondary" onClick={() => setParams(new URLSearchParams())}>Clear filters</Button>} />
+              <EmptyState title="No transactions match these filters" message="Try different words, widening the dates or clearing a filter." action={<Button variant="secondary" onClick={() => setParams(new URLSearchParams())}>Clear filters</Button>} />
             ) : (
               <EmptyState title="No transactions yet" message="Add your first income or expense to see it here." action={<Link to="/transactions/new"><Button>Add transaction</Button></Link>} />
             )
