@@ -65,3 +65,4 @@ actionlint but has not run on GitHub yet because the repository has not been pus
 Small follow-up features, one or two commits each.
 
 - [x] 2026-11-25 Search transactions by description (API parameter `q` and a search box on the transactions page)
+- [x] 2026-11-27 Budget progress colour states: amber Warning pill + text at 80-99%, red Over budget pill above 100%
