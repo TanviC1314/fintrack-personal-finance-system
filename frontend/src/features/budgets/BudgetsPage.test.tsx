@@ -65,6 +65,26 @@ describe('BudgetsPage', () => {
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '100')
   })
 
+  it('shows a Warning label and amber summary text when a budget is between 80 and 100 percent used', async () => {
+    budgets = [budget({ spent: 170, remaining: 30, utilisationPercent: 85, exceeded: false })]
+
+    renderPage()
+
+    expect(await screen.findByText('Warning')).toBeInTheDocument()
+    expect(screen.queryByText('Over budget')).not.toBeInTheDocument()
+    const summary = screen.getByText(/85% used/)
+    expect(summary).toHaveClass('text-amber-700')
+  })
+
+  it('shows no state label when a budget is below the warning threshold', async () => {
+    renderPage()
+
+    await screen.findByText('€150.50 of €200.00')
+
+    expect(screen.queryByText('Warning')).not.toBeInTheDocument()
+    expect(screen.queryByText('Over budget')).not.toBeInTheDocument()
+  })
+
   it('guides the user when there are no budgets', async () => {
     budgets = []
 
